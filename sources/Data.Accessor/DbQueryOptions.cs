@@ -1,0 +1,13 @@
+﻿using System.Linq.Expressions;
+using Data.Database.Entities;
+
+namespace Data.Accessor;
+
+public sealed class DbQueryOptions<TModel> where TModel : AEntityBase
+{
+    public bool AsNoTracking { get; set; }
+    public bool OrderByDescending { get; set; }
+    public Expression<Func<TModel, bool>>? WhereExpression { get; set; }
+    public Expression<Func<TModel, object>>? OrderByExpression { get; set; }
+    public List<Expression<Func<TModel, object>>> Includes { get; set; } = new();
+}

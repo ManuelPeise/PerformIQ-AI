@@ -1,0 +1,97 @@
+﻿using Data.Accessor.Interfaces;
+using Data.Database;
+using Data.Database.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Data.Accessor.Repositories
+{
+    public class RepositoryBase<TModel> : IRepositoryBase<TModel> where TModel : AEntityBase
+    {
+        private readonly DbSet<TModel> _dbSet;
+
+        public RepositoryBase(DatabaseContext context)
+        {
+            _dbSet = context.Set<TModel>();
+        }
+
+        public async Task<IReadOnlyList<TModel>> GetAsync(DbQueryOptions<TModel>? options = null, CancellationToken cancellationToken = default)
+        {
+            IQueryable<TModel> query = _dbSet;
+
+            if (options?.AsNoTracking == true)
+            {
+                query = query.AsNoTracking();
+            }
+
+            if (options?.Includes is not null)
+            {
+                foreach (var includeExpression in options.Includes)
+                {
+                    query = query.Include(includeExpression);
+                }
+            }
+
+            if (options?.WhereExpression is not null)
+            {
+                query = query.Where(options.WhereExpression);
+            }
+
+            if (options?.OrderByExpression is not null)
+            {
+                query = options.OrderByDescending
+                    ? query.OrderByDescending(options.OrderByExpression)
+                    : query.OrderBy(options.OrderByExpression);
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<TModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            return await _dbSet.FirstOrDefaultAsync(entity => entity.Id == id, cancellationToken);
+        }
+
+        public async Task<TModel> AddAsync(TModel entity, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(entity);
+            var entry = await _dbSet.AddAsync(entity, cancellationToken);
+            return entry.Entity;
+        }
+
+        public async Task<TModel> AddOrUpdateAsync(TModel entity, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(entity);
+
+            if (entity.Id <= 0)
+            {
+                var addedEntry = await _dbSet.AddAsync(entity, cancellationToken);
+                return addedEntry.Entity;
+            }
+
+            var exists = await _dbSet.AnyAsync(current => current.Id == entity.Id, cancellationToken);
+
+            if (!exists)
+            {
+                var addedEntry = await _dbSet.AddAsync(entity, cancellationToken);
+                return addedEntry.Entity;
+            }
+
+            _dbSet.Update(entity);
+            return entity;
+        }
+
+        public Task UpdateAsync(TModel entity, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(entity);
+            _dbSet.Update(entity);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(TModel entity, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(entity);
+            _dbSet.Remove(entity);
+            return Task.CompletedTask;
+        }
+    }
+}
