@@ -1,4 +1,5 @@
 using System.Text;
+using Data.Database;
 using Logic.Shared.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -40,6 +41,10 @@ internal static class AuthRegistration
 
         services.AddAuthorization(options =>
         {
+            options.AddPolicy("admin-access", policy =>
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole(UserRoleClaims.Admin) || ctx.User.IsInRole(UserRoleClaims.SystemAdmin)));
+
             options.AddPolicy("module:training:canview", policy =>
                 policy.RequireAssertion(ctx => HasModuleScopeOrAdmin(ctx, "training:canview")));
 

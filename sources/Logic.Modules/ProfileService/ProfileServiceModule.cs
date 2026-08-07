@@ -1,17 +1,14 @@
-﻿using Data.Accessor.Interfaces;
-using Data.Database;
+﻿using Data.Accessor;
+using Data.Accessor.Interfaces;
 using Data.Database.Entities.User;
 using Logic.Modules.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Shared.Models.Profile;
 
 namespace Logic.Modules.ProfileService;
 
 public class ProfileServiceModule(
-    DatabaseContext databaseContext,
     IApplicationUnitOfWork applicationUnitOfWork) : IProfileServiceModule
 {
-    private readonly DatabaseContext _databaseContext = databaseContext;
     private readonly IApplicationUnitOfWork _applicationUnitOfWork = applicationUnitOfWork;
 
     public async Task<UserProfileModel> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
@@ -21,10 +18,7 @@ public class ProfileServiceModule(
             throw new ArgumentException("Valid user id is required.");
         }
 
-        var user = await _databaseContext.Users
-            .Include(x => x.Profile!)
-                .ThenInclude(x => x.Address)
-            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+        var user = await GetUserWithProfileAsync(userId, cancellationToken);
 
         if (user is null)
         {
@@ -54,15 +48,7 @@ public class ProfileServiceModule(
             throw new ArgumentException("Date of birth cannot be in the future.");
         }
 
-        var user = await _databaseContext.Users
-            .Include(x => x.Profile!)
-                .ThenInclude(x => x.Address)
-            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
-
-        if (user is null)
-        {
-            throw new InvalidOperationException("Authenticated user was not found.");
-        }
+        var user = await GetUserWithProfileAsync(userId, cancellationToken);
 
         var profile = user.Profile;
         if (profile is null)
@@ -175,5 +161,41 @@ public class ProfileServiceModule(
     private static string? NormalizeOptionalText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private async Task<UserEntity> GetUserWithProfileAsync(int userId, CancellationToken cancellationToken)
+    {
+        var users = await _applicationUnitOfWork.Users.GetAsync(
+            new DbQueryOptions<UserEntity>
+            {
+                Includes = { x => x.Profile! },
+                WhereExpression = x => x.Id == userId
+            },
+            cancellationToken);
+
+        var user = users.FirstOrDefault();
+        if (user is null)
+        {
+            throw new InvalidOperationException("Authenticated user was not found.");
+        }
+
+        if (user.Profile is not null)
+        {
+            var profiles = await _applicationUnitOfWork.UserProfiles.GetAsync(
+                new DbQueryOptions<UserProfileEntity>
+                {
+                    Includes = { x => x.Address! },
+                    WhereExpression = x => x.Id == user.Profile.Id
+                },
+                cancellationToken);
+
+            var profileWithAddress = profiles.FirstOrDefault();
+            if (profileWithAddress is not null)
+            {
+                user.Profile = profileWithAddress;
+            }
+        }
+
+        return user;
     }
 }
