@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Seq.Extensions.Logging" Version="9.0.0" />
     <ProjectReference Include="..\..\Data.Accessor\Data.Accessor.csproj" />
     <ProjectReference Include="..\..\Data.Database\Data.Database.csproj" />
     <ProjectReference Include="..\..\Logic.Authentication\Logic.Authentication.csproj" />
@@ -29,10 +30,6 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.6.24" />
     <PackageReference Include="MySql.Data" Version="26.7.0" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 

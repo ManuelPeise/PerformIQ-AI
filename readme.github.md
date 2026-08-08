@@ -33,13 +33,13 @@ PerformIQ-AI is a modular ASP.NET Core 10 + Blazor application focused on authen
 
 ## Logging
 
-- Serilog is used as the host logging provider.
+- Seq.Extensions.Logging is used as a host logging provider.
 - Logs are emitted as JSON to the console.
 - Docker usage is aligned with stdout/stderr log collection (`docker logs` / `docker compose logs`).
 
 ## Local development
 
-1. Ensure Docker is available (Compose stack runs `webapp`, `mysql`, and `serilog`).
+1. Ensure Docker is available (Compose stack runs `webapp`, `mysql`, and `seqlog`).
 2. Configure JWT settings in `sources/Web.App/Web.App/appsettings.json`.
 3. Configure `SystemAdminSeed` in `sources/Web.App/Web.App/appsettings.Development.json` for local development.
    - `SystemAdminSeed.Password` is configured as cleartext and gets hashed on startup before persistence.
@@ -67,7 +67,7 @@ docker compose up --build
 App endpoint:
 
 - `http://localhost:8080`
-- `http://localhost:8081` (Serilog/Seq UI)
+- `http://localhost:8081` (Seq UI)
 - LAN access: `http://<HOST_IP>:8080` (app), `<HOST_IP>:3306` (MySQL), `<HOST_IP>:8081` (Seq UI), if firewall allows.
 
 Tail logs:

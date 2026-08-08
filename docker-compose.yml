@@ -20,9 +20,9 @@ services:
       timeout: 5s
       retries: 12
 
-  serilog:
+  seqlog:
     image: datalust/seq:2024.3
-    container_name: performanceiq-serilog
+    container_name: performanceiq-seqlog
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
@@ -41,7 +41,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      serilog:
+      seqlog:
         condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -56,9 +56,8 @@ services:
       SystemAdminSeed__Email: "system.admin@performiq.local"
       SystemAdminSeed__IsActive: "true"
       SystemAdminSeed__Password: "ChangeMe-OnlyForInitialSeeding!"
-      Serilog__Using__1: "Serilog.Sinks.Seq"
-      Serilog__WriteTo__1__Name: "Seq"
-      Serilog__WriteTo__1__Args__serverUrl: "http://serilog:5341"
+      Seq__ServerUrl: "http://seqlog:5341"
+      Seq__MinimumLevel: "Information"
     ports:
       - "0.0.0.0:8080:8080"
 

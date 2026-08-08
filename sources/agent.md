@@ -22,7 +22,7 @@ Long-term vision: a personal AI-powered performance coach for data-driven health
 - Infrastructure: Docker Compose project `performanceiq` with three services/containers:
   - `webapp` (app)
   - `mysql` (database)
-  - `serilog` (Seq)
+  - `seqlog` (Seq)
 - Startup UX:
   - Landing page route is `/` and uses a dedicated landing layout (no header/sidebar shell).
   - Authenticated app area starts at `/home`.

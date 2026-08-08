@@ -30,7 +30,7 @@ PerformIQ-AI is an ASP.NET Core 10 application with a Blazor front end, JWT auth
 ## Prerequisites
 
 1. .NET SDK 10
-2. Docker Desktop (Compose stack with webapp + mysql + serilog)
+2. Docker Desktop (Compose stack with webapp + mysql + seqlog)
 3. Valid DB connection string and JWT settings in:
    - `sources/Web.App/Web.App/appsettings.json`
 4. Configure default system admin seed data in `appsettings.Development.json` under `SystemAdminSeed`
@@ -38,9 +38,9 @@ PerformIQ-AI is an ASP.NET Core 10 application with a Blazor front end, JWT auth
 
 ## Logging
 
-- Serilog is configured as the host logger.
-- Logs are emitted as structured JSON to console.
-- In containers, logs are written to stdout/stderr and can be read with `docker logs`.
+- Seq.Extensions.Logging is configured as a host logging provider.
+- Seq target configuration is read from the `Seq` section in appsettings/environment.
+- In containers, logs are shipped to the `seqlog` service and can be explored in Seq UI.
 
 ## UI theme assets
 
@@ -85,7 +85,7 @@ Batch helpers:
 App endpoint:
 
 - `http://localhost:8080`
-- `http://localhost:8081` (Serilog/Seq UI)
+- `http://localhost:8081` (Seq UI)
 - From another device in your LAN: `http://<HOST_IP>:8080` (app), `<HOST_IP>:3306` (MySQL), `<HOST_IP>:8081` (Seq UI).
 
 View logs:

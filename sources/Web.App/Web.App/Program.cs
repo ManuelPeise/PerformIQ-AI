@@ -2,79 +2,60 @@ using Web.App.Bundels;
 using Web.App.ApiControllers;
 using Web.App.Components;
 using Microsoft.Extensions.Hosting;
-using Serilog;
+using Seq.Extensions.Logging;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-try
+var builder = WebApplication.CreateBuilder(args);
+builder.Host.ConfigureLogging(loggingBuilder =>
 {
-    var builder = WebApplication.CreateBuilder(args);
+    loggingBuilder.AddSeq(builder.Configuration.GetSection("Seq"));
+});
 
-    builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+AppServiceRegistration.AddWebAppServices(builder);
+
+var app = builder.Build();
+await app.InitializeDatabaseAsync();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseWebAssemblyDebugging();
+    app.UseSwagger(options =>
     {
-        loggerConfiguration
-            .ReadFrom.Configuration(context.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext();
+        options.SerializeAsV2 = true;
     });
-
-    AppServiceRegistration.AddWebAppServices(builder);
-
-    var app = builder.Build();
-    await app.InitializeDatabaseAsync();
-
-    // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
+    app.UseSwaggerUI(options =>
     {
-        app.UseWebAssemblyDebugging();
-        app.UseSwagger(options =>
-        {
-            options.SerializeAsV2 = true;
-        });
-        app.UseSwaggerUI(options =>
-        {
-            options.SwaggerEndpoint("../swagger/v1/swagger.json", "PerformIQ API v1");
-        });
-    }
-    else
-    {
-        app.UseExceptionHandler("/Error", createScopeForErrors: true);
-        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-        app.UseHsts();
-    }
-    app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-
-    var isRunningInContainer = string.Equals(
-        Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
-        "true",
-        StringComparison.OrdinalIgnoreCase);
-    if (!isRunningInContainer)
-    {
-        app.UseHttpsRedirection();
-    }
-
-    app.UseAntiforgery();
-    app.UseAuthentication();
-    app.UseAuthorization();
-
-    app.MapStaticAssets();
-    app.MapAuthEndpoints();
-    app.MapProfileEndpoints();
-    app.MapUserManagementEndpoints();
-    app.MapRazorComponents<App>()
-        .AddInteractiveServerRenderMode()
-        .AddInteractiveWebAssemblyRenderMode()
-        .AddAdditionalAssemblies(typeof(Web.App.Client._Imports).Assembly);
-
-    app.Run();
+        options.SwaggerEndpoint("../swagger/v1/swagger.json", "PerformIQ API v1");
+    });
 }
-catch (Exception exception) when (exception is not HostAbortedException)
+else
 {
-    Log.Fatal(exception, "Web host terminated unexpectedly.");
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
 }
-finally
+app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+
+var isRunningInContainer = string.Equals(
+    Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"),
+    "true",
+    StringComparison.OrdinalIgnoreCase);
+if (!isRunningInContainer)
 {
-    Log.CloseAndFlush();
+    app.UseHttpsRedirection();
 }
+
+app.UseAntiforgery();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapStaticAssets();
+app.MapAuthEndpoints();
+app.MapProfileEndpoints();
+app.MapUserManagementEndpoints();
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(Web.App.Client._Imports).Assembly);
+
+app.Run();
