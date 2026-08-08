@@ -16,6 +16,25 @@ The platform should:
 
 Long-term vision: a personal AI-powered performance coach for data-driven health and fitness decisions.
 
+## Current Repository Context (Keep in Sync)
+
+- Runtime stack: ASP.NET Core 10 host (`Web.App`) with interactive Blazor + WebAssembly client (`Web.App.Client`).
+- Infrastructure: Docker Compose project `performanceiq` with three services/containers:
+  - `webapp` (app)
+  - `mysql` (database)
+  - `serilog` (Seq)
+- Startup UX:
+  - Landing page route is `/` and uses a dedicated landing layout (no header/sidebar shell).
+  - Authenticated app area starts at `/home`.
+- Authentication flow (JWT + refresh token):
+  - Access token is returned to the client and kept **in memory** on the client side.
+  - Refresh token is stored in an **HttpOnly cookie** (not exposed to JS).
+  - Unauthenticated access to protected routes redirects to `/auth/login?returnUrl=...`.
+  - Auth pages:
+    - `/auth/login`
+    - `/auth/register`
+    - `/auth/logout`
+
 ## Engineering Principles
 
 - Write clean, readable, maintainable C#.
@@ -34,6 +53,10 @@ Long-term vision: a personal AI-powered performance coach for data-driven health
 - Use dependency injection, not manual service construction.
 - Depend on abstractions (`I...`) at boundaries.
 - Always use braces for `if`, `for`, `foreach`, `while`, and `using`.
+- Keep functions/methods to a maximum of 20 lines where feasible.
+- Prevent code duplication; extract shared logic instead of copy-pasting.
+- Name private fields with a leading underscore (e.g., `_myField`).
+- Use PascalCase for types, methods, properties, and other applicable identifiers.
 
 ## Blazor Conventions
 
@@ -41,6 +64,10 @@ Long-term vision: a personal AI-powered performance coach for data-driven health
 - Use strongly typed parameters and event callbacks.
 - Favor one-way data flow and explicit state updates.
 - Isolate reusable UI into focused components.
+- Build UI from reusable components instead of duplicating markup patterns.
+- Apply MVVM for UI structure (View + ViewModel separation).
+- Respect the implemented theme system (light/dark behavior and styling contracts).
+- Ensure responsive design with a mobile-first approach.
 
 ## Database Design Conventions
 

@@ -18,6 +18,15 @@ PerformIQ-AI is an ASP.NET Core 10 application with a Blazor front end, JWT auth
 - **Profile**: `/api/profile`
 - **User Management** (admin): `/api/users*`
 
+## Blazor authentication flow
+
+- Login and registration UI routes:
+  - `/auth/login`
+  - `/auth/register`
+- Refresh tokens are stored server-side and transported via **HttpOnly cookie**.
+- The client keeps only the access token in memory and tries a silent refresh on startup.
+- Protected routes redirect unauthenticated users to `/auth/login?returnUrl=...`.
+
 ## Prerequisites
 
 1. .NET SDK 10
