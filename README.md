@@ -42,6 +42,14 @@ PerformIQ-AI is an ASP.NET Core 10 application with a Blazor front end, JWT auth
 - Logs are emitted as structured JSON to console.
 - In containers, logs are written to stdout/stderr and can be read with `docker logs`.
 
+## UI theme assets
+
+- Theme tokens and typography scale are centralized in:
+  - `sources/Web.App/Web.App/wwwroot/css/app.css`
+- Self-hosted font locations:
+  - `sources/Web.App/Web.App/wwwroot/fonts/inter`
+  - `sources/Web.App/Web.App/wwwroot/fonts/jetbrains-mono`
+
 ## Run locally
 
 ```bash
