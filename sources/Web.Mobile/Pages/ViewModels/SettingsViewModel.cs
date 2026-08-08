@@ -20,6 +20,7 @@ public sealed class SettingsViewModel : BaseViewModel
     private string _savedLanguageCode = "EN";
     private bool _hasPendingChanges;
     private bool _canLogout;
+    private bool _canRequestPermissions;
     private bool _isSavingSettings;
 
     public SettingsViewModel(
@@ -43,7 +44,7 @@ public sealed class SettingsViewModel : BaseViewModel
         SelectedLanguageCode = _savedLanguageCode;
         StatusMessage = T(AppTextKeys.StatusReady);
         SaveSettingsCommand = new Command(SaveSettings, () => HasPendingChanges);
-        RequestPermissionsCommand = new Command(async () => await RequestPermissionsAsync());
+        RequestPermissionsCommand = new Command(async () => await RequestPermissionsAsync(), () => CanRequestPermissions);
         LogoutCommand = new Command(async () => await LogoutAsync(), () => CanLogout);
     }
 
@@ -130,6 +131,18 @@ public sealed class SettingsViewModel : BaseViewModel
         }
     }
 
+    public bool CanRequestPermissions
+    {
+        get => _canRequestPermissions;
+        private set
+        {
+            if (SetProperty(ref _canRequestPermissions, value))
+            {
+                (RequestPermissionsCommand as Command)?.ChangeCanExecute();
+            }
+        }
+    }
+
     public ICommand SaveSettingsCommand { get; }
     public ICommand RequestPermissionsCommand { get; }
     public ICommand LogoutCommand { get; }
@@ -185,13 +198,23 @@ public sealed class SettingsViewModel : BaseViewModel
         var isAvailable = await _healthConnectBridgeService.IsHealthConnectAvailableAsync();
         SdkStatusIcon = isSupported && isAvailable ? "✅" : "❌";
 
-        var requiredCount = CountPermissions(await _healthConnectBridgeService.GetRequiredPermissionsJsonAsync());
-        var grantedCount = CountPermissions(await _healthConnectBridgeService.GetGrantedPermissionsJsonAsync());
+        var requiredPermissions = ParsePermissions(await _healthConnectBridgeService.GetRequiredPermissionsJsonAsync());
+        var grantedPermissions = ParsePermissions(await _healthConnectBridgeService.GetGrantedPermissionsJsonAsync());
+        var requiredCount = requiredPermissions.Count;
+        var grantedCount = grantedPermissions.Count(permission => requiredPermissions.Contains(permission));
+        var hasAllPermissions = requiredCount > 0 && grantedCount >= requiredCount;
+
+        CanRequestPermissions = isSupported && isAvailable && requiredCount > 0 && !hasAllPermissions;
         GrantedPermissionsSummary = string.Format(T(AppTextKeys.StatusPermissionCountFormat), grantedCount, requiredCount);
     }
 
     private async Task RequestPermissionsAsync()
     {
+        if (!CanRequestPermissions)
+        {
+            return;
+        }
+
         await _healthConnectBridgeService.RequestAllPermissionsAsync();
         await RefreshSdkStatusAsync();
     }
@@ -202,10 +225,14 @@ public sealed class SettingsViewModel : BaseViewModel
         await RefreshLogoutAvailabilityAsync();
     }
 
-    private static int CountPermissions(string permissionsJson)
+    private static HashSet<string> ParsePermissions(string permissionsJson)
     {
         var permissions = JsonSerializer.Deserialize<string[]>(permissionsJson);
-        return permissions?.Length ?? 0;
+        return permissions is null
+            ? []
+            : permissions
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .ToHashSet(StringComparer.Ordinal);
     }
 
     private void UpdateHasPendingChanges()
