@@ -39,7 +39,7 @@ PerformIQ-AI is a modular ASP.NET Core 10 + Blazor application focused on authen
 
 ## Local development
 
-1. Ensure Docker is available (single container runs WebApp + MariaDB).
+1. Ensure Docker is available (Compose stack runs `webapp`, `mysql`, and `serilog`).
 2. Configure JWT settings in `sources/Web.App/Web.App/appsettings.json`.
 3. Configure `SystemAdminSeed` in `sources/Web.App/Web.App/appsettings.Development.json` for local development.
    - `SystemAdminSeed.Password` is configured as cleartext and gets hashed on startup before persistence.
@@ -50,7 +50,7 @@ docker compose up --build
 ```
 
 5. Start the app:
-   - The app starts inside Docker as part of step 4.
+   - The app starts inside Docker as part of step 4 (`webapp` service).
 
 6. Open Swagger:
 
@@ -67,12 +67,13 @@ docker compose up --build
 App endpoint:
 
 - `http://localhost:8080`
-- LAN access: `http://<HOST_IP>:8080` (and `<HOST_IP>:3306` for DB if firewall allows).
+- `http://localhost:8081` (Serilog/Seq UI)
+- LAN access: `http://<HOST_IP>:8080` (app), `<HOST_IP>:3306` (MySQL), `<HOST_IP>:8081` (Seq UI), if firewall allows.
 
 Tail logs:
 
 ```bash
-docker compose logs -f app
+docker compose logs -f webapp
 ```
 
 PowerShell helper scripts:

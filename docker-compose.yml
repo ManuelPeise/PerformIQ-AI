@@ -1,17 +1,51 @@
+name: performanceiq
+
 services:
-  app:
-    build:
-      context: .
-      dockerfile: sources/Web.App/Web.App/Dockerfile
-    container_name: performiq-app
+  mysql:
+    image: mysql:8.4
+    container_name: performanceiq-mysql
     restart: unless-stopped
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: PerformIqDb
       MYSQL_USER: DevUser
       MYSQL_PASSWORD: DevPassword123!
-      MYSQL_BIND_ADDRESS: 0.0.0.0
+    ports:
+      - "0.0.0.0:3306:3306"
+    volumes:
+      - performanceiq-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  serilog:
+    image: datalust/seq:2024.3
+    container_name: performanceiq-serilog
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "0.0.0.0:8081:80"
+      - "0.0.0.0:5341:5341"
+    volumes:
+      - performanceiq-seq-data:/data
+
+  webapp:
+    build:
+      context: .
+      dockerfile: sources/Web.App/Web.App/Dockerfile
+    container_name: performanceiq-webapp
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      serilog:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__PerformIqDb: "Server=mysql;Port=3306;Database=PerformIqDb;User=DevUser;Password=DevPassword123!;"
       Jwt__Issuer: PerformIQ-AI
       Jwt__Audience: PerformIQ-AI-Client
       Jwt__SigningKey: CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
@@ -22,11 +56,12 @@ services:
       SystemAdminSeed__Email: "system.admin@performiq.local"
       SystemAdminSeed__IsActive: "true"
       SystemAdminSeed__Password: "ChangeMe-OnlyForInitialSeeding!"
+      Serilog__Using__1: "Serilog.Sinks.Seq"
+      Serilog__WriteTo__1__Name: "Seq"
+      Serilog__WriteTo__1__Args__serverUrl: "http://serilog:5341"
     ports:
       - "0.0.0.0:8080:8080"
-      - "0.0.0.0:3306:3306"
-    volumes:
-      - performiq-mysql-data:/var/lib/mysql
 
 volumes:
-  performiq-mysql-data:
+  performanceiq-mysql-data:
+  performanceiq-seq-data:

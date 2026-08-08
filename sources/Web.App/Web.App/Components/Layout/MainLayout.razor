@@ -1,9 +1,128 @@
 ﻿@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
 
-@Body
+<div class="app-shell @GetThemeClass()">
+    <header class="app-header">
+        <button type="button" class="header-button menu-toggle" aria-label="Toggle navigation menu" @onclick="ToggleSidebar">
+            ☰
+        </button>
+        <div class="brand">PerformIQ-AI</div>
+        <button type="button" class="header-button theme-toggle" aria-label="Toggle light and dark mode" @onclick="ToggleThemeAsync">
+            @GetThemeToggleLabel()
+        </button>
+    </header>
+
+    @if (_sidebarOpenOnMobile)
+    {
+        <button type="button" class="sidebar-overlay" aria-label="Close navigation menu" @onclick="CloseSidebar"></button>
+    }
+
+    <div class="layout-grid">
+        <aside class="sidebar @GetSidebarClass()" aria-label="Primary">
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="/" @onclick="CloseSidebar">Landing</a>
+                <a class="nav-item" href="/home" @onclick="CloseSidebar">Home (placeholder)</a>
+                <a class="nav-item" href="/profile" @onclick="CloseSidebar">Profile (placeholder)</a>
+                <a class="nav-item" href="/dashboard" @onclick="CloseSidebar">Dashboard (placeholder)</a>
+
+                <button type="button" class="nav-group-toggle" aria-expanded="@_managementExpanded" @onclick="ToggleManagement">
+                    Management
+                    <span class="chevron">@(_managementExpanded ? "▾" : "▸")</span>
+                </button>
+                @if (_managementExpanded)
+                {
+                    <div class="nav-group-items">
+                        <a class="nav-item nested" href="/users" @onclick="CloseSidebar">Users (placeholder)</a>
+                        <a class="nav-item nested" href="/roles" @onclick="CloseSidebar">Roles (placeholder)</a>
+                    </div>
+                }
+
+                <button type="button" class="nav-group-toggle" aria-expanded="@_modulesExpanded" @onclick="ToggleModules">
+                    Modules
+                    <span class="chevron">@(_modulesExpanded ? "▾" : "▸")</span>
+                </button>
+                @if (_modulesExpanded)
+                {
+                    <div class="nav-group-items">
+                        <a class="nav-item nested" href="/training" @onclick="CloseSidebar">Training (placeholder)</a>
+                        <a class="nav-item nested" href="/health" @onclick="CloseSidebar">Health (placeholder)</a>
+                        <a class="nav-item nested" href="/performance" @onclick="CloseSidebar">Performance (placeholder)</a>
+                    </div>
+                }
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            @Body
+        </main>
+    </div>
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private const string LightTheme = "light";
+    private const string DarkTheme = "dark";
+
+    private bool _sidebarOpenOnMobile;
+    private bool _managementExpanded = true;
+    private bool _modulesExpanded;
+    private string _theme = LightTheme;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var storedTheme = await JSRuntime.InvokeAsync<string>("performIqTheme.getStoredTheme");
+        if (storedTheme is DarkTheme or LightTheme)
+        {
+            _theme = storedTheme;
+        }
+        else
+        {
+            var prefersDark = await JSRuntime.InvokeAsync<bool>("performIqTheme.prefersDark");
+            _theme = prefersDark ? DarkTheme : LightTheme;
+        }
+
+        StateHasChanged();
+    }
+
+    private void ToggleSidebar()
+    {
+        _sidebarOpenOnMobile = !_sidebarOpenOnMobile;
+    }
+
+    private void CloseSidebar()
+    {
+        _sidebarOpenOnMobile = false;
+    }
+
+    private void ToggleManagement()
+    {
+        _managementExpanded = !_managementExpanded;
+    }
+
+    private void ToggleModules()
+    {
+        _modulesExpanded = !_modulesExpanded;
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        _theme = _theme == DarkTheme ? LightTheme : DarkTheme;
+        await JSRuntime.InvokeVoidAsync("performIqTheme.setStoredTheme", _theme);
+    }
+
+    private string GetThemeClass() => _theme == DarkTheme ? "theme-dark" : "theme-light";
+
+    private string GetThemeToggleLabel() => _theme == DarkTheme ? "Light" : "Dark";
+
+    private string GetSidebarClass() => _sidebarOpenOnMobile ? "open" : string.Empty;
+}

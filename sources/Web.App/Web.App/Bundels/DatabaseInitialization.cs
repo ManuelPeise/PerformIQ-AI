@@ -15,16 +15,23 @@ internal static class DatabaseInitialization
 
         await using var scope = webApplication.Services.CreateAsyncScope();
         var databaseContext = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var useEnsureCreated = webApplication.Configuration.GetValue<bool>("DatabaseInitialization:UseEnsureCreated");
 
-        var hasMigrations = databaseContext.Database.GetMigrations().Any();
-        
-        if (hasMigrations)
+        if (useEnsureCreated)
         {
-            await databaseContext.Database.MigrateAsync(cancellationToken);
+            await databaseContext.Database.EnsureCreatedAsync(cancellationToken);
         }
         else
         {
-            await databaseContext.Database.EnsureCreatedAsync(cancellationToken);
+            var hasMigrations = databaseContext.Database.GetMigrations().Any();
+            if (hasMigrations)
+            {
+                await databaseContext.Database.MigrateAsync(cancellationToken);
+            }
+            else
+            {
+                await databaseContext.Database.EnsureCreatedAsync(cancellationToken);
+            }
         }
 
         await RoleSeeder.SeedRolesAsync(databaseContext, cancellationToken);
