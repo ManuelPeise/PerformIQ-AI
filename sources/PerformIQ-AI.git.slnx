@@ -3,6 +3,7 @@
     <Project Path="Web.App/Web.App.Client/Web.App.Client.csproj" Id="36b388c7-582c-4800-ae4e-606f05ffdcdc" />
     <Project Path="Web.App/Web.App/Web.App.csproj" Id="d7153cb4-4011-409d-b82d-2992d4b03b1a" />
     <Project Path="Web.Mobile/Web.Mobile.csproj" Id="e2fad0a0-37e9-40fe-93b6-4600d009374d" />
+    <Project Path="Web.ViewModels/Web.ViewModels.csproj" Id="dea8906f-66f1-432f-833f-9a5213d2b874" />
   </Folder>
   <Folder Name="/02 Logic/">
     <Project Path="Logic.Authentication/Logic.Authentication.csproj" Id="0715f6eb-e6aa-49c0-803e-2e5cd7c84a80" />

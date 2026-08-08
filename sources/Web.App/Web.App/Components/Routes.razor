@@ -1,7 +1,7 @@
 ﻿<CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
         <Found Context="routeData">
-            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="@ResolveLayout(routeData.PageType)">
                 <NotAuthorized>
                     <Web.App.Client.Auth.RedirectToLogin />
                 </NotAuthorized>
@@ -15,3 +15,17 @@
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    private static Type ResolveLayout(Type pageType)
+    {
+        if (pageType == typeof(Pages.Landing)
+            || pageType == typeof(Web.App.Client.Pages.Auth.Login)
+            || pageType == typeof(Web.App.Client.Pages.Auth.Register))
+        {
+            return typeof(Layout.LandingLayout);
+        }
+
+        return typeof(Layout.MainLayout);
+    }
+}

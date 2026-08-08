@@ -2,14 +2,19 @@
 @inject IJSRuntime JSRuntime
 
 <div class="app-shell @GetThemeClass()">
-    <header class="app-header">
+    <header class="navbar navbar-expand-lg navbar-dark bg-dark text-light p-2">
         <button type="button" class="header-button menu-toggle" aria-label="Toggle navigation menu" @onclick="ToggleSidebar">
             ☰
         </button>
-        <div class="brand">PerformIQ-AI</div>
-        <button type="button" class="header-button theme-toggle" aria-label="Toggle light and dark mode" @onclick="ToggleThemeAsync">
-            @GetThemeToggleLabel()
-        </button>
+        
+        <a class="navbar-brand d-flex align-items-center navbar-logo" href="/">
+            <img src="/images/perform_iq_ai_logo.png"
+                 alt="Logo"
+                 width="30"
+                 height="30"
+                 class="me-2">
+            <span>PerformIq Ai</span>
+        </a>
     </header>
 
     @if (_sidebarOpenOnMobile)
@@ -18,40 +23,36 @@
     }
 
     <div class="layout-grid">
-        <aside class="sidebar @GetSidebarClass()" aria-label="Primary">
+        <aside class="sidebar @GetSidebarClass() bg-dark text-light" aria-label="Primary">
             <nav class="sidebar-nav">
-                <a class="nav-item" href="/" @onclick="CloseSidebar">Landing</a>
-                <a class="nav-item" href="/home" @onclick="CloseSidebar">Home</a>
-                <a class="nav-item" href="/auth/login" @onclick="CloseSidebar">Login</a>
-                <a class="nav-item" href="/auth/register" @onclick="CloseSidebar">Register</a>
-                <a class="nav-item" href="/auth/logout" @onclick="CloseSidebar">Logout</a>
-                <a class="nav-item" href="/profile" @onclick="CloseSidebar">Profile (placeholder)</a>
-                <a class="nav-item" href="/dashboard" @onclick="CloseSidebar">Dashboard (placeholder)</a>
+                <a class="nav-item text-light" href="/dashboard" @onclick="CloseSidebar">Dashboard (placeholder)</a>
 
-                <button type="button" class="nav-group-toggle" aria-expanded="@_managementExpanded" @onclick="ToggleManagement">
+                @* <button type="button" class="nav-group-toggle text-light" aria-expanded="@_managementExpanded" @onclick="ToggleManagement">
                     Management
-                    <span class="chevron">@(_managementExpanded ? "▾" : "▸")</span>
+                    <span class="chevron text-light">@(_managementExpanded ? "▴" : "▾" )</span>
                 </button>
                 @if (_managementExpanded)
                 {
                     <div class="nav-group-items">
-                        <a class="nav-item nested" href="/users" @onclick="CloseSidebar">Users (placeholder)</a>
-                        <a class="nav-item nested" href="/roles" @onclick="CloseSidebar">Roles (placeholder)</a>
+                        <a class="nav-item nested text-light" href="/users" @onclick="CloseSidebar">Users (placeholder)</a>
+                        <a class="nav-item nested text-light" href="/roles" @onclick="CloseSidebar">Roles (placeholder)</a>
                     </div>
-                }
+                } *@
 
-                <button type="button" class="nav-group-toggle" aria-expanded="@_modulesExpanded" @onclick="ToggleModules">
+                @* <button type="button" class="nav-group-toggle text-light" aria-expanded="@_modulesExpanded" @onclick="ToggleModules">
                     Modules
-                    <span class="chevron">@(_modulesExpanded ? "▾" : "▸")</span>
+                    <span class="chevron text-light">@(_modulesExpanded ? "▴" : "▾")</span>
                 </button>
                 @if (_modulesExpanded)
                 {
                     <div class="nav-group-items">
-                        <a class="nav-item nested" href="/training" @onclick="CloseSidebar">Training (placeholder)</a>
-                        <a class="nav-item nested" href="/health" @onclick="CloseSidebar">Health (placeholder)</a>
-                        <a class="nav-item nested" href="/performance" @onclick="CloseSidebar">Performance (placeholder)</a>
+                        <a class="nav-item nested text-light" href="/training" @onclick="CloseSidebar">Training (placeholder)</a>
+                        <a class="nav-item nested text-light" href="/health" @onclick="CloseSidebar">Health (placeholder)</a>
+                        <a class="nav-item nested text-light" href="/performance" @onclick="CloseSidebar">Performance (placeholder)</a>
                     </div>
-                }
+                } *@
+                <a class="nav-item text-light" href="/profile" @onclick="CloseSidebar">Profile (placeholder)</a>
+                <a class="nav-item text-light" href="/auth/logout" @onclick="CloseSidebar">Logout</a>
             </nav>
         </aside>
 

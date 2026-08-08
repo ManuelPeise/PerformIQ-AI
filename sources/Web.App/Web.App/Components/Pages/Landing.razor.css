@@ -1,0 +1,74 @@
+.landing-hero {
+    position: relative;
+    min-height: calc(100vh - 2rem);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+}
+
+.hero-background {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(0deg, rgba(2, 6, 23, 0.52), rgba(2, 6, 23, 0.52)),
+        url('/images/landing-page-background.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    width: min(44rem, 92%);
+    color: #f8fafc;
+    text-align: center;
+    display: grid;
+    gap: 1rem;
+}
+
+.hero-kicker {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: var(--font-size-xs);
+    line-height: var(--line-height-small);
+    font-weight: var(--font-weight-label);
+    color: #bfdbfe;
+}
+
+.hero-content h1 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: clamp(var(--font-size-2xl), 6vw, var(--font-size-5xl));
+    line-height: clamp(2rem, 6vw, var(--line-height-h1));
+    font-weight: var(--font-weight-h1);
+}
+
+.hero-copy {
+    margin: 0;
+    font-size: clamp(var(--font-size-base), 2.7vw, var(--font-size-xl));
+    line-height: var(--line-height-body);
+    color: #dbeafe;
+}
+
+.hero-cta {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: var(--radius-pill);
+    padding: 0.72rem 1.3rem;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-small);
+    font-weight: var(--font-weight-heading);
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.hero-cta:hover {
+    background: color-mix(in srgb, var(--primary) 88%, black);
+    transform: translateY(-1px);
+}
