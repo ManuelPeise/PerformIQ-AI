@@ -21,9 +21,17 @@ PerformIQ-AI is an ASP.NET Core 10 application with a Blazor front end, JWT auth
 ## Prerequisites
 
 1. .NET SDK 10
-2. MySQL running locally
+2. Docker Desktop (single container runs WebApp + MariaDB via Docker Compose)
 3. Valid DB connection string and JWT settings in:
    - `sources/Web.App/Web.App/appsettings.json`
+4. Configure default system admin seed data in `appsettings.Development.json` under `SystemAdminSeed`
+   - `Password` is configured as cleartext and is hashed during startup before being stored
+
+## Logging
+
+- Serilog is configured as the host logger.
+- Logs are emitted as structured JSON to console.
+- In containers, logs are written to stdout/stderr and can be read with `docker logs`.
 
 ## Run locally
 
@@ -34,3 +42,37 @@ dotnet run --project .\sources\Web.App\Web.App\Web.App.csproj --launch-profile h
 Swagger UI is available at:
 
 - `https://localhost:7102/swagger`
+
+## Run with Docker
+
+```bash
+docker compose up --build
+```
+
+PowerShell helpers:
+
+```powershell
+.\scripts\docker\up.ps1
+.\scripts\docker\update.ps1
+.\scripts\docker\clean.ps1
+```
+
+Batch helpers:
+
+```bat
+.\scripts\docker\start-docker-containers.bat
+.\scripts\docker\update-docker-containers.bat
+.\scripts\docker\delete-docker-containers.bat
+```
+
+App endpoint:
+
+- `http://localhost:8080`
+- `3306` is exposed from the same container for database access when needed.
+- From another device in your LAN: `http://<HOST_IP>:8080` (and `<HOST_IP>:3306` for DB if allowed by firewall).
+
+View logs:
+
+```bash
+docker compose logs -f app
+```

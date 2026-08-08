@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: sources/Web.App/Web.App/Dockerfile
+    container_name: performiq-app
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: PerformIqDb
+      MYSQL_USER: DevUser
+      MYSQL_PASSWORD: DevPassword123!
+      MYSQL_BIND_ADDRESS: 0.0.0.0
+      Jwt__Issuer: PerformIQ-AI
+      Jwt__Audience: PerformIQ-AI-Client
+      Jwt__SigningKey: CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
+      Jwt__AccessTokenMinutes: "15"
+      Jwt__RefreshTokenDays: "14"
+      SystemAdminSeed__Enabled: "true"
+      SystemAdminSeed__UserName: "system-admin"
+      SystemAdminSeed__Email: "system.admin@performiq.local"
+      SystemAdminSeed__IsActive: "true"
+      SystemAdminSeed__Password: "ChangeMe-OnlyForInitialSeeding!"
+    ports:
+      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:3306:3306"
+    volumes:
+      - performiq-mysql-data:/var/lib/mysql
+
+volumes:
+  performiq-mysql-data:

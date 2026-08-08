@@ -27,22 +27,69 @@ PerformIQ-AI is a modular ASP.NET Core 10 + Blazor application focused on authen
 
 ## Security and authorization
 
-- JWT Bearer authentication
+- JWT-based authentication and refresh-token flow
 - Role-based admin policy (`admin-access`) for user-management endpoints
 - Module-scope policies for feature permissions
 
+## Logging
+
+- Serilog is used as the host logging provider.
+- Logs are emitted as JSON to the console.
+- Docker usage is aligned with stdout/stderr log collection (`docker logs` / `docker compose logs`).
+
 ## Local development
 
-1. Configure MySQL connection string and JWT settings in `sources/Web.App/Web.App/appsettings.json`.
-2. Start the app:
+1. Ensure Docker is available (single container runs WebApp + MariaDB).
+2. Configure JWT settings in `sources/Web.App/Web.App/appsettings.json`.
+3. Configure `SystemAdminSeed` in `sources/Web.App/Web.App/appsettings.Development.json` for local development.
+   - `SystemAdminSeed.Password` is configured as cleartext and gets hashed on startup before persistence.
+4. Start containerized stack:
 
 ```bash
-dotnet run --project .\sources\Web.App\Web.App\Web.App.csproj --launch-profile https
+docker compose up --build
 ```
 
-3. Open Swagger:
+5. Start the app:
+   - The app starts inside Docker as part of step 4.
 
-- `https://localhost:7102/swagger`
+6. Open Swagger:
+
+- `http://localhost:8080/swagger`
+
+## Docker
+
+Run:
+
+```bash
+docker compose up --build
+```
+
+App endpoint:
+
+- `http://localhost:8080`
+- LAN access: `http://<HOST_IP>:8080` (and `<HOST_IP>:3306` for DB if firewall allows).
+
+Tail logs:
+
+```bash
+docker compose logs -f app
+```
+
+PowerShell helper scripts:
+
+```powershell
+.\scripts\docker\up.ps1
+.\scripts\docker\update.ps1
+.\scripts\docker\clean.ps1
+```
+
+Batch helper scripts:
+
+```bat
+.\scripts\docker\start-docker-containers.bat
+.\scripts\docker\update-docker-containers.bat
+.\scripts\docker\delete-docker-containers.bat
+```
 
 ## Conventions
 

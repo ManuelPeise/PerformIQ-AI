@@ -156,3 +156,4 @@ build/
 .env
 .env.*
 !.env.example
+/sources/Web.App/Web.App/appsettings.Development.json

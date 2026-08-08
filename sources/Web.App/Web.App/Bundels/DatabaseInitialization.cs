@@ -1,6 +1,9 @@
 using Data.Database;
 using Data.Database.Seeding;
+using Logic.Authentication.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Shared.Models.Seeding;
 
 namespace Web.App.Bundels;
 
@@ -25,5 +28,19 @@ internal static class DatabaseInitialization
         }
 
         await RoleSeeder.SeedRolesAsync(databaseContext, cancellationToken);
+
+        var systemAdminSeedOptions = scope.ServiceProvider
+            .GetRequiredService<IOptions<SystemAdminSeedOptions>>()
+            .Value;
+
+        var normalizedPassword = systemAdminSeedOptions.Password.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedPassword))
+        {
+            throw new InvalidOperationException("SystemAdminSeed.Password is required.");
+        }
+
+        var passwordHashService = scope.ServiceProvider.GetRequiredService<IPasswordHashService>();
+        var hashedPassword = passwordHashService.HashPassword(normalizedPassword);
+        await SystemAdminSeeder.SeedSystemAdminAsync(databaseContext, systemAdminSeedOptions, hashedPassword, cancellationToken);
     }
 }
