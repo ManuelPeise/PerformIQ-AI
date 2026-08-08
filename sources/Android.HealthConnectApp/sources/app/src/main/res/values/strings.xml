@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HealthConnectApp</string>
+    <string name="health_connect_sample_title">HealthConnectBridge sample app</string>
+    <string name="health_connect_status">SDK Supported: %1$s, Health Connect Available: %2$s</string>
+</resources>
+

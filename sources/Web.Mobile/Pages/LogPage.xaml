@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Web.Mobile.Pages.LogPage"
+             Title="{Binding PageTitle}"
+             Shell.NavBarIsVisible="False">
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="12">
+            <HorizontalStackLayout Spacing="8">
+                <Label Text="{Binding HealthConnectSdkLabel}" FontAttributes="Bold" />
+                <Label Text="{Binding SdkAvailabilityIcon}" />
+                <Label Text="{Binding SdkAvailabilityText}" />
+            </HorizontalStackLayout>
+            <Label Text="{Binding GrantedPermissionsLabel}" FontAttributes="Bold" />
+            <Editor HeightRequest="120" IsReadOnly="True" Text="{Binding GrantedPermissions}" />
+            <Label Text="{Binding BackgroundTaskInfoLabel}" FontAttributes="Bold" />
+            <Editor HeightRequest="140" IsReadOnly="True" Text="{Binding BackgroundInfo}" />
+            <Button Text="{Binding RefreshButtonText}" Command="{Binding RefreshCommand}" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

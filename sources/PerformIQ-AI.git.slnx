@@ -2,6 +2,7 @@
   <Folder Name="/01 Web/">
     <Project Path="Web.App/Web.App.Client/Web.App.Client.csproj" Id="36b388c7-582c-4800-ae4e-606f05ffdcdc" />
     <Project Path="Web.App/Web.App/Web.App.csproj" Id="d7153cb4-4011-409d-b82d-2992d4b03b1a" />
+    <Project Path="Web.Mobile/Web.Mobile.csproj" Id="e2fad0a0-37e9-40fe-93b6-4600d009374d" />
   </Folder>
   <Folder Name="/02 Logic/">
     <Project Path="Logic.Authentication/Logic.Authentication.csproj" Id="0715f6eb-e6aa-49c0-803e-2e5cd7c84a80" />
@@ -13,7 +14,11 @@
     <Project Path="Data.Database/Data.Database.csproj" Id="660e8253-dfda-4861-8c23-4bcaabd53fa1" />
   </Folder>
   <Folder Name="/04 Shared/">
+    <Project Path="Shared.AndroidBindings/Shared.AndroidBindings.csproj" Id="05efd7c1-b089-460a-9204-c7347e10531f" />
     <Project Path="Shared.Models/Shared.Models.csproj" Id="7edddf4e-1eea-4373-8fa8-7f30530d14a9" />
   </Folder>
-  <Folder Name="/05 Tests/" />
+  <Folder Name="/05 Android/">
+    <Project Path="Android.HealthConnectApp/Android.HealthConnectApp.csproj" Id="e4726fdc-29fc-4f07-b392-ff320019fade" />
+  </Folder>
+  <Folder Name="/06 Tests/" />
 </Solution>

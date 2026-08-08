@@ -51,8 +51,10 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 app.MapAuthEndpoints();
+app.MapMobileAuthEndpoints();
 app.MapProfileEndpoints();
 app.MapUserManagementEndpoints();
+app.MapMobileBackgroundSyncEndpoints();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()

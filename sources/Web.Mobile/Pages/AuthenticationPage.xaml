@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Web.Mobile.Pages.AuthenticationPage"
+             Title="{Binding PageTitle}"
+             Shell.NavBarIsVisible="False">
+    <Grid Padding="12">
+        <Border
+            StrokeShape="RoundRectangle 16"
+            Padding="24"
+            BackgroundColor="#1A223B"
+            Stroke="#2A3658"
+            HorizontalOptions="Fill"
+            VerticalOptions="Center"
+            Margin="0,0,0,0">
+            <VerticalStackLayout Spacing="18">
+                <Label Text="{Binding PageTitle}" HorizontalTextAlignment="Center" Style="{StaticResource Headline}" />
+                <Label Text="{Binding UserNameLabel}" Margin="0,8,0,0" />
+                <Entry Placeholder="{Binding UserNamePlaceholder}" Text="{Binding UserNameOrEmail}" />
+                <Label Text="{Binding PasswordLabel}" />
+                <Entry Placeholder="{Binding PasswordPlaceholder}" IsPassword="True" Text="{Binding Password}" />
+                <Button Text="{Binding LoginButtonText}" Command="{Binding LoginCommand}" IsEnabled="{Binding CanLogin}" />
+                <Label Text="{Binding StatusMessage}" IsVisible="{Binding HasStatusMessage}" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

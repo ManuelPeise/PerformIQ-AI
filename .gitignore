@@ -54,6 +54,17 @@ artifacts/
 # .NET Aspire
 .aspire/
 
+# .NET MAUI / Xamarin
+*.apk
+*.aab
+*.apks
+*.ipa
+*.dSYM/
+*.mobileprovision
+*.jks
+*.keystore
+*.p12
+
 
 # =========================
 # Test
@@ -147,6 +158,23 @@ build/
 # =========================
 
 **/.dockerignore
+
+
+# =========================
+# Kotlin / Gradle / Android
+# =========================
+
+.gradle/
+**/.gradle/
+.kotlin/
+**/.kotlin/
+**/.cxx/
+**/.externalNativeBuild/
+*.kotlin_module
+*.iml
+local.properties
+captures/
+*.hprof
 
 
 # =========================
