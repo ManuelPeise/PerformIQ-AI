@@ -11,10 +11,8 @@ public static class RoleSeeder
 
         var roleNames = new[]
         {
-            UserRoleClaims.SystemAdmin,
             UserRoleClaims.Admin,
             UserRoleClaims.User,
-            UserRoleClaims.Guest
         };
 
         var existingRoleNames = await databaseContext.Roles

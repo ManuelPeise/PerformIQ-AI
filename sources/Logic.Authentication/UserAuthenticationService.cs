@@ -7,138 +7,168 @@ using Data.Database.Entities.User;
 using Logic.Authentication.Interfaces;
 using Logic.Shared;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shared.Models.Authentication;
 
 namespace Logic.Authentication;
 
 public class UserAuthenticationService(
+    ILogger<UserAuthenticationService> logger,
     IApplicationUnitOfWork applicationUnitOfWork,
     IPasswordHashService passwordHashService,
     IJwtTokenService jwtTokenService,
     IOptions<JwtOptions> jwtOptions,
     IHttpContextAccessor httpContextAccessor)
-    : LogicBase(applicationUnitOfWork), IUserAuthenticationService
+    : LogicBase(applicationUnitOfWork, httpContextAccessor), IUserAuthenticationService
 {
     private readonly IPasswordHashService _passwordHashService = passwordHashService;
     private readonly IJwtTokenService _jwtTokenService = jwtTokenService;
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
-
-    public async Task<AuthResponseModel> RegisterAsync(RegisterRequestModel requestModel, CancellationToken cancellationToken = default)
+    private readonly ILogger<UserAuthenticationService> _logger = logger;
+    public async Task<bool> RegisterAsync(RegisterRequestModel requestModel, CancellationToken cancellationToken = default)
     {
-        ValidateRegisterRequest(requestModel);
+        try
+        {
+            ValidateRegisterRequest(requestModel);
 
-        var normalizedEmail = requestModel.Email.Trim().ToLowerInvariant();
-        var normalizedUserName = requestModel.UserName.Trim();
+            var normalizedEmail = requestModel.Email.Trim().ToLowerInvariant();
+            var normalizedUserName = requestModel.UserName.Trim();
 
-        var existingUsers = await ApplicationUnitOfWork.Users.GetAsync(
-            new DbQueryOptions<UserEntity>
+            var existingUsers = await ApplicationUnitOfWork.Users.GetAsync(
+                new DbQueryOptions<UserEntity>
+                {
+                    WhereExpression = user =>
+                        user.Email.ToLower() == normalizedEmail || user.UserName.ToLower() == normalizedUserName.ToLower()
+                },
+                cancellationToken);
+            var userExists = existingUsers.Count > 0;
+
+            if (userExists)
             {
-                WhereExpression = user =>
-                    user.Email.ToLower() == normalizedEmail || user.UserName.ToLower() == normalizedUserName.ToLower()
-            },
-            cancellationToken);
-        var userExists = existingUsers.Count > 0;
-
-        if (userExists)
-        {
-            throw new InvalidOperationException("A user with the same username or email already exists.");
-        }
-
-        var roles = await ApplicationUnitOfWork.Roles.GetAsync(
-            new DbQueryOptions<RoleEntity> { WhereExpression = x => x.Name == UserRoleClaims.User },
-            cancellationToken);
-        var role = roles.FirstOrDefault();
-        if (role is null)
-        {
-            throw new InvalidOperationException("Required base role 'User' was not found. Ensure role seeding has run.");
-        }
-
-        var user = new UserEntity
-        {
-            Email = normalizedEmail,
-            UserName = normalizedUserName,
-            IsActive = true,
-            Credentials = new UserCredentialsEntity
-            {
-                PasswordHash = _passwordHashService.HashPassword(requestModel.Password),
-                FaildLoginAttemts = 0
+                throw new InvalidOperationException("A user with the same username or email already exists.");
             }
-        };
 
-        user.UserRoles.Add(new UserRoleEntity { Role = role });
+            var roles = await ApplicationUnitOfWork.Roles.GetAsync(
+                new DbQueryOptions<RoleEntity> { WhereExpression = x => x.Name == UserRoleClaims.User },
+                cancellationToken);
 
-        await ApplicationUnitOfWork.Users.AddAsync(user, cancellationToken);
+            var role = roles.FirstOrDefault();
 
-        var nowUtc = DateTime.UtcNow;
-        var refreshToken = CreateRefreshTokenEntity(user.Credentials!, nowUtc, GetRequestIp());
-        user.Credentials!.RefreshTokens.Add(refreshToken.Entity);
+            if (role is null)
+            {
+                throw new InvalidOperationException("Required base role 'User' was not found. Ensure role seeding has run.");
+            }
 
-        await ApplicationUnitOfWork.SaveChangesAsync(cancellationToken);
+            var user = new UserEntity
+            {
+                Email = normalizedEmail,
+                UserName = normalizedUserName,
+                IsActive = true,
+                Credentials = new UserCredentialsEntity
+                {
+                    PasswordHash = _passwordHashService.HashPassword(requestModel.Password),
+                    FaildLoginAttemts = 0
+                }
+            };
 
-        var accessToken = _jwtTokenService.CreateAccessToken(user, nowUtc);
+            user.UserRoles.Add(new UserRoleEntity { Role = role });
 
-        return new AuthResponseModel
+            var grantedModulesEntities = await ApplicationUnitOfWork.Modules.GetAsync(
+                new DbQueryOptions<ModuleEntity>
+                {
+                    WhereExpression = x => x.IsDefaultModule,
+                },
+                cancellationToken);
+
+            var userModulePermissions = grantedModulesEntities.Select(module => new ModulePermissionEntity
+            { 
+                ModuleId = module.Id,
+                CanView = true,
+                CanCreate = true,
+                CanEdit = true,
+                CanDelete = false,
+            }).ToList();
+
+            user.ModulePermissions.AddRange(userModulePermissions);
+
+            await ApplicationUnitOfWork.Users.AddAsync(user, cancellationToken);
+
+            await ApplicationUnitOfWork.SaveChangesAsync(cancellationToken);
+
+            return await Task.FromResult(true);
+        }
+        catch (Exception exception)
         {
-            AccessToken = accessToken.Token,
-            AccessTokenExpiresAtUtc = accessToken.ExpiresAtUtc,
-            RefreshToken = refreshToken.RawToken
-        };
+            _logger.LogError(exception, "Error occurred during user registration.");
+
+            return await Task.FromResult(false);
+        }
     }
 
-    public async Task<AuthResponseModel> LoginAsync(LoginRequestModel requestModel, CancellationToken cancellationToken = default)
+    public async Task<AuthResponseModel?> LoginAsync(LoginRequestModel requestModel, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(requestModel.UserNameOrEmail) || string.IsNullOrWhiteSpace(requestModel.Password))
+        try
         {
-            throw new ArgumentException("Username/email and password are required.");
-        }
-
-        var normalizedIdentity = requestModel.UserNameOrEmail.Trim().ToLowerInvariant();
-
-        var users = await ApplicationUnitOfWork.Users.GetAsync(
-            new DbQueryOptions<UserEntity>
+            if (string.IsNullOrWhiteSpace(requestModel.UserNameOrEmail) || string.IsNullOrWhiteSpace(requestModel.Password))
             {
-                Includes = { x => x.Credentials },
-                WhereExpression = x => x.Email.ToLower() == normalizedIdentity || x.UserName.ToLower() == normalizedIdentity
-            },
-            cancellationToken);
-        var user = users.FirstOrDefault();
+                throw new ArgumentException("Username/email and password are required.");
+            }
 
-        if (user is null || user.Credentials is null || !user.IsActive)
-        {
-            throw new UnauthorizedAccessException("Invalid credentials.");
-        }
+            var normalizedIdentity = requestModel.UserNameOrEmail.Trim().ToLowerInvariant();
 
-        await PopulateUserClaimsDataAsync(user, cancellationToken);
+            var users = await ApplicationUnitOfWork.Users.GetAsync(
+                new DbQueryOptions<UserEntity>
+                {
+                    Includes = { x => x.Credentials },
+                    WhereExpression = x => x.Email.ToLower() == normalizedIdentity || x.UserName.ToLower() == normalizedIdentity
+                },
+                cancellationToken);
+            var user = users.FirstOrDefault();
 
-        var isValidPassword = _passwordHashService.VerifyPassword(requestModel.Password, user.Credentials.PasswordHash);
-        if (!isValidPassword)
-        {
-            user.Credentials.FaildLoginAttemts += 1;
+            if (user is null || user.Credentials is null || !user.IsActive)
+            {
+                throw new UnauthorizedAccessException("Invalid credentials.");
+            }
+
+            await PopulateUserClaimsDataAsync(user, cancellationToken);
+
+            var isValidPassword = _passwordHashService.VerifyPassword(requestModel.Password, user.Credentials.PasswordHash);
+            if (!isValidPassword)
+            {
+                user.Credentials.FaildLoginAttemts += 1;
+                await ApplicationUnitOfWork.SaveChangesAsync(cancellationToken);
+                throw new UnauthorizedAccessException("Invalid credentials.");
+            }
+
+            if (user.Credentials.FaildLoginAttemts > 0)
+            {
+                user.Credentials.FaildLoginAttemts = 0;
+            }
+
+            var nowUtc = DateTime.UtcNow;
+            var refreshToken = CreateRefreshTokenEntity(user.Credentials, nowUtc, GetRequestIp());
+            await ApplicationUnitOfWork.RefreshTokens.AddAsync(refreshToken.Entity, cancellationToken);
+
             await ApplicationUnitOfWork.SaveChangesAsync(cancellationToken);
-            throw new UnauthorizedAccessException("Invalid credentials.");
+
+            var accessToken = _jwtTokenService.CreateAccessToken(user, nowUtc);
+
+            return new AuthResponseModel
+            {
+                AccessToken = accessToken.Token,
+                AccessTokenExpiresAtUtc = accessToken.ExpiresAtUtc,
+                RefreshToken = refreshToken.RawToken
+            };
+
         }
-
-        if (user.Credentials.FaildLoginAttemts > 0)
+        catch (Exception exception)
         {
-            user.Credentials.FaildLoginAttemts = 0;
+            _logger.LogError(exception, "Error occurred during user login.");
+
+            return null;
         }
-
-        var nowUtc = DateTime.UtcNow;
-        var refreshToken = CreateRefreshTokenEntity(user.Credentials, nowUtc, GetRequestIp());
-        await ApplicationUnitOfWork.RefreshTokens.AddAsync(refreshToken.Entity, cancellationToken);
-
-        await ApplicationUnitOfWork.SaveChangesAsync(cancellationToken);
-
-        var accessToken = _jwtTokenService.CreateAccessToken(user, nowUtc);
-
-        return new AuthResponseModel
-        {
-            AccessToken = accessToken.Token,
-            AccessTokenExpiresAtUtc = accessToken.ExpiresAtUtc,
-            RefreshToken = refreshToken.RawToken
-        };
     }
 
     public async Task<AuthResponseModel> RefreshAsync(RefreshTokenRequestModel requestModel, CancellationToken cancellationToken = default)
@@ -265,16 +295,16 @@ public class UserAuthenticationService(
             },
             cancellationToken);
 
-        var userModulePermissions = await ApplicationUnitOfWork.UserModulePermissions.GetAsync(
-            new DbQueryOptions<UserModulePermissionEntity>
+        var userModulePermissions = await ApplicationUnitOfWork.ModulePermissions.GetAsync(
+            new DbQueryOptions<ModulePermissionEntity>
             {
-                Includes = { x => x.ModulePermission },
+                Includes = { x => x.Module },
                 WhereExpression = x => x.UserId == user.Id
             },
             cancellationToken);
 
         user.UserRoles = userRoles.ToList();
-        user.UserModulePermissions = userModulePermissions.ToList();
+        user.ModulePermissions = userModulePermissions.ToList();
     }
 
     private RefreshTokenCreationResult CreateRefreshTokenEntity(UserCredentialsEntity credentials, DateTime nowUtc, string requestIp)

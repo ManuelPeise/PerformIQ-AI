@@ -16,8 +16,39 @@ namespace Data.Database.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
+
+            modelBuilder.Entity("Data.Database.Entities.Authentication.ModuleEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsDefaultModule")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Modules");
+                });
 
             modelBuilder.Entity("Data.Database.Entities.Authentication.ModulePermissionEntity", b =>
                 {
@@ -44,10 +75,8 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Module")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
+                    b.Property<int>("ModuleId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -55,9 +84,14 @@ namespace Data.Database.Migrations
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("longtext");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("Module")
+                    b.HasIndex("ModuleId");
+
+                    b.HasIndex("UserId", "ModuleId")
                         .IsUnique();
 
                     b.ToTable("ModulePermissions");
@@ -348,41 +382,6 @@ namespace Data.Database.Migrations
                     b.ToTable("UserProfiles");
                 });
 
-            modelBuilder.Entity("Data.Database.Entities.UserModulePermissionEntity", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("ModulePermissionId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ModulePermissionId");
-
-                    b.HasIndex("UserId", "ModulePermissionId")
-                        .IsUnique();
-
-                    b.ToTable("UserModulePermissions");
-                });
-
             modelBuilder.Entity("Data.Database.Entities.UserRoleEntity", b =>
                 {
                     b.Property<int>("Id")
@@ -416,6 +415,25 @@ namespace Data.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("UserRoles");
+                });
+
+            modelBuilder.Entity("Data.Database.Entities.Authentication.ModulePermissionEntity", b =>
+                {
+                    b.HasOne("Data.Database.Entities.Authentication.ModuleEntity", "Module")
+                        .WithMany("ModulePermissions")
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
+                        .WithMany("ModulePermissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Module");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.Authentication.RefreshTokenEntity", b =>
@@ -462,25 +480,6 @@ namespace Data.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Data.Database.Entities.UserModulePermissionEntity", b =>
-                {
-                    b.HasOne("Data.Database.Entities.Authentication.ModulePermissionEntity", "ModulePermission")
-                        .WithMany("UserModulePermissions")
-                        .HasForeignKey("ModulePermissionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Data.Database.Entities.User.UserEntity", "User")
-                        .WithMany("UserModulePermissions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ModulePermission");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Data.Database.Entities.UserRoleEntity", b =>
                 {
                     b.HasOne("Data.Database.Entities.Authentication.RoleEntity", "Role")
@@ -500,9 +499,9 @@ namespace Data.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Data.Database.Entities.Authentication.ModulePermissionEntity", b =>
+            modelBuilder.Entity("Data.Database.Entities.Authentication.ModuleEntity", b =>
                 {
-                    b.Navigation("UserModulePermissions");
+                    b.Navigation("ModulePermissions");
                 });
 
             modelBuilder.Entity("Data.Database.Entities.Authentication.RoleEntity", b =>
@@ -517,11 +516,13 @@ namespace Data.Database.Migrations
 
             modelBuilder.Entity("Data.Database.Entities.User.UserEntity", b =>
                 {
-                    b.Navigation("Credentials");
+                    b.Navigation("Credentials")
+                        .IsRequired();
 
-                    b.Navigation("Profile");
+                    b.Navigation("ModulePermissions");
 
-                    b.Navigation("UserModulePermissions");
+                    b.Navigation("Profile")
+                        .IsRequired();
 
                     b.Navigation("UserRoles");
                 });

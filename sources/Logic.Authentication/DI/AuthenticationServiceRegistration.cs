@@ -10,6 +10,7 @@ namespace Logic.Authentication.DI
             services.AddScoped<IPasswordHashService, PasswordHashService>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
         }
     }
 }

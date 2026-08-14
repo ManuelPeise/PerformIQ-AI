@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Data.Database.Entities.Authentication;
 using Data.Database.Entities.User;
 using Logic.Authentication.Interfaces;
 using Logic.Shared.Authentication;
@@ -23,7 +24,6 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions) : IJwtToken
 
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Name, user.UserName),
             new(ClaimTypes.Email, user.Email),
@@ -35,9 +35,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions) : IJwtToken
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        foreach (var moduleScope in user.UserModulePermissions
-                     .SelectMany(x => BuildModuleScopes(x.ModulePermission))
-                     .Distinct())
+        foreach (var moduleScope in user.ModulePermissions.SelectMany(scope => BuildModuleScopes(scope)).Distinct())        
         {
             claims.Add(new Claim(AuthClaimTypes.ModuleScope, moduleScope));
         }
@@ -70,7 +68,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> jwtOptions) : IJwtToken
         return Convert.ToHexString(hashBytes);
     }
 
-    private static IEnumerable<string> BuildModuleScopes(Data.Database.Entities.Authentication.ModulePermissionEntity modulePermission)
+    private static IEnumerable<string> BuildModuleScopes(ModulePermissionEntity modulePermission)
     {
         var module = modulePermission.Module;
 

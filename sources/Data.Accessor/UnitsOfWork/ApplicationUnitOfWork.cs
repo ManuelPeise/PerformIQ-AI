@@ -19,7 +19,7 @@ namespace Data.Accessor.UnitsOfWork
         public IRepositoryBase<RoleEntity> Roles { get; }
         public IRepositoryBase<UserRoleEntity> UserRoles { get; }
         public IRepositoryBase<ModulePermissionEntity> ModulePermissions { get; }
-        public IRepositoryBase<UserModulePermissionEntity> UserModulePermissions { get; }
+        public IRepositoryBase<ModuleEntity> Modules { get; }
         public IRepositoryBase<RefreshTokenEntity> RefreshTokens { get; }
 
         public ApplicationUnitOfWork(
@@ -32,7 +32,7 @@ namespace Data.Accessor.UnitsOfWork
             IRepositoryBase<RoleEntity> roles,
             IRepositoryBase<UserRoleEntity> userRoles,
             IRepositoryBase<ModulePermissionEntity> modulePermissions,
-            IRepositoryBase<UserModulePermissionEntity> userModulePermissions,
+            IRepositoryBase<ModuleEntity> modules,
             IRepositoryBase<RefreshTokenEntity> refreshTokens)
         {
             _context = context;
@@ -44,7 +44,7 @@ namespace Data.Accessor.UnitsOfWork
             Roles = roles;
             UserRoles = userRoles;
             ModulePermissions = modulePermissions;
-            UserModulePermissions = userModulePermissions;
+            Modules = modules;
             RefreshTokens = refreshTokens;
         }
 

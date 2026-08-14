@@ -17,7 +17,7 @@ namespace Data.Database
         public DbSet<RoleEntity> Roles => Set<RoleEntity>();
         public DbSet<UserRoleEntity> UserRoles => Set<UserRoleEntity>();
         public DbSet<ModulePermissionEntity> ModulePermissions => Set<ModulePermissionEntity>();
-        public DbSet<UserModulePermissionEntity> UserModulePermissions => Set<UserModulePermissionEntity>();
+        public DbSet<ModuleEntity> Modules  => Set<ModuleEntity>();
         public DbSet<UserCredentialsEntity> UserCredentials => Set<UserCredentialsEntity>();
         public DbSet<RefreshTokenEntity> RefreshTokens => Set<RefreshTokenEntity>();
 
@@ -100,25 +100,20 @@ namespace Data.Database
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<ModulePermissionEntity>(builder =>
+            modelBuilder.Entity<ModulePermissionEntity>(entity =>
             {
-                builder.Property(x => x.Module).HasMaxLength(128).IsRequired();
-                builder.HasIndex(x => x.Module).IsUnique();
-            });
-
-            modelBuilder.Entity<UserModulePermissionEntity>(builder =>
-            {
-                builder.HasIndex(x => new { x.UserId, x.ModulePermissionId }).IsUnique();
-
-                builder.HasOne(x => x.User)
-                    .WithMany(x => x.UserModulePermissions)
+                entity.HasOne(x => x.User)
+                    .WithMany(x => x.ModulePermissions)
                     .HasForeignKey(x => x.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                builder.HasOne(x => x.ModulePermission)
-                    .WithMany(x => x.UserModulePermissions)
-                    .HasForeignKey(x => x.ModulePermissionId)
+                entity.HasOne(x => x.Module)
+                    .WithMany(x => x.ModulePermissions)
+                    .HasForeignKey(x => x.ModuleId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new { x.UserId, x.ModuleId })
+                    .IsUnique();
             });
 
             modelBuilder.Entity<RefreshTokenEntity>(builder =>

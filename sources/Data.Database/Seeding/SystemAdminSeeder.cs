@@ -1,4 +1,5 @@
 using Data.Database.Entities;
+using Data.Database.Entities.Authentication;
 using Data.Database.Entities.User;
 using Microsoft.EntityFrameworkCore;
 using Shared.Models.Seeding;
@@ -48,12 +49,12 @@ public static class SystemAdminSeeder
             return;
         }
 
-        var systemAdminRole = await databaseContext.Roles
-            .FirstOrDefaultAsync(role => role.Name == UserRoleClaims.SystemAdmin, cancellationToken);
+        var adminRole = await databaseContext.Roles
+            .FirstOrDefaultAsync(role => role.Name == UserRoleClaims.Admin, cancellationToken);
 
-        if (systemAdminRole is null)
+        if (adminRole is null)
         {
-            throw new InvalidOperationException("Required role 'SystemAdmin' was not found. Ensure role seeding has run.");
+            throw new InvalidOperationException("Required role 'Admin' was not found. Ensure role seeding has run.");
         }
 
         var userEntity = new UserEntity
@@ -67,7 +68,21 @@ public static class SystemAdminSeeder
                 FaildLoginAttemts = 0
             }
         };
-        userEntity.UserRoles.Add(new UserRoleEntity { RoleId = systemAdminRole.Id });
+        userEntity.UserRoles.Add(new UserRoleEntity { RoleId = adminRole.Id });
+
+        var grantedModulesEntities = await databaseContext.Modules
+               .ToListAsync(cancellationToken);
+
+        var userModulePermissions = grantedModulesEntities.Select(module => new ModulePermissionEntity
+        {
+            ModuleId = module.Id,
+            CanView = true,
+            CanCreate = true,
+            CanEdit = true,
+            CanDelete = false,
+        }).ToList();
+
+        userEntity.ModulePermissions = userModulePermissions;
 
         await databaseContext.Users.AddAsync(userEntity, cancellationToken);
         await databaseContext.SaveChangesAsync(cancellationToken);
