@@ -2,6 +2,7 @@
 using Data.Database;
 using Data.Database.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Data.Accessor.Repositories
 {
@@ -46,9 +47,24 @@ namespace Data.Accessor.Repositories
             return await query.ToListAsync(cancellationToken);
         }
 
-        public async Task<TModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<TModel?> GetByIdAsync(int id, bool asNoTracking = false, List<Expression<Func<TModel, object>>>? includeExpressions = null, CancellationToken cancellationToken = default)
         {
-            return await _dbSet.FirstOrDefaultAsync(entity => entity.Id == id, cancellationToken);
+            IQueryable<TModel> query = _dbSet;
+
+            if (asNoTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            if (includeExpressions != null)
+            {
+                foreach (var includeExpression in includeExpressions)
+                {
+                    query = query.Include(includeExpression);
+                }
+            }
+
+            return await query.FirstOrDefaultAsync(entity => entity.Id == id, cancellationToken);
         }
 
         public async Task<TModel> AddAsync(TModel entity, CancellationToken cancellationToken = default)
@@ -91,6 +107,13 @@ namespace Data.Accessor.Repositories
         {
             ArgumentNullException.ThrowIfNull(entity);
             _dbSet.Remove(entity);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteRange(IEnumerable<TModel>? entities, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(entities);
+            _dbSet.RemoveRange(entities);
             return Task.CompletedTask;
         }
     }

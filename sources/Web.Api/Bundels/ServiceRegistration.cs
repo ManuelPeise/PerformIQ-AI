@@ -50,6 +50,12 @@ namespace Web.Api.Bundels
                         UserRoleClaims.Admin,
                         UserRoleClaims.User);
                 });
+
+                options.AddPolicy("user-management", policy =>
+                {
+                    policy.RequireAuthenticatedUser();
+                    policy.RequireRole(UserRoleClaims.Admin);
+                });
             });
 
             DataAccessorServiceRegistration.RegisterServices(builder.Services);
@@ -112,14 +118,6 @@ namespace Web.Api.Bundels
                         ClockSkew = TimeSpan.FromSeconds(30)
                     };
                 });
-        }
-
-        private static bool HasModuleScopeOrAdmin(AuthorizationHandlerContext context, string requiredScope)
-        {
-            return context.User.IsInRole("Admin")
-                   || context.User.Claims.Any(claim =>
-                       claim.Type == AuthClaimTypes.ModuleScope
-                       && string.Equals(claim.Value, requiredScope, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

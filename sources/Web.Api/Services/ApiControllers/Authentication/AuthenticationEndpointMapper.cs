@@ -4,11 +4,11 @@ using Shared.Models.Authentication;
 
 namespace Web.Api.Services.ApiControllers.Authentication
 {
-    public static class AuthenticationEndpointMapper
+    internal static class AuthenticationEndpointMapper
     {
         private const string RefreshTokenCookieName = "refresh_token";
 
-        public static void MapAuthEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
+        internal static void MapAuthEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
         {
             var group = endpointRouteBuilder.MapGroup("/api/auth").WithTags("Authentication");
 

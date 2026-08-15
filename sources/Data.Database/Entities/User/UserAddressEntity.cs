@@ -3,13 +3,12 @@
 public class UserAddressEntity : AEntityBase
 {
     public int UserProfileId { get; set; }
-    public string Street { get; set; } = string.Empty;
-    public string HouseNumber { get; set; } = string.Empty;
-    public string? AddressLine2 { get; set; }
-    public string PostalCode { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string? StateOrProvince { get; set; }
-    public string CountryCode { get; set; } = string.Empty;
+    public string Street { get; set; } = null!;
+    public string HouseNumber { get; set; } = null!;
+    public string PostalCode { get; set; } = null!;
+    public string City { get; set; } = null!;
+    public string StateOrProvince { get; set; } = null!;
+    public string CountryCode { get; set; } = null!;
 
     public UserProfileEntity UserProfile { get; set; } = null!;
 }

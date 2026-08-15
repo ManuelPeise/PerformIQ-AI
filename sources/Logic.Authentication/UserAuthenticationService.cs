@@ -66,6 +66,21 @@ public class UserAuthenticationService(
                 Email = normalizedEmail,
                 UserName = normalizedUserName,
                 IsActive = true,
+                Profile = new UserProfileEntity
+                {
+                    FirstName = string.Empty,
+                    LastName = string.Empty,
+                    DateOfBirth = null,
+                    Address = new UserAddressEntity
+                    {
+                        Street = string.Empty,
+                        HouseNumber = string.Empty,
+                        PostalCode = string.Empty,
+                        City = string.Empty,
+                        StateOrProvince = string.Empty,
+                        CountryCode = string.Empty
+                    }
+                },
                 Credentials = new UserCredentialsEntity
                 {
                     PasswordHash = _passwordHashService.HashPassword(requestModel.Password),
@@ -83,7 +98,7 @@ public class UserAuthenticationService(
                 cancellationToken);
 
             var userModulePermissions = grantedModulesEntities.Select(module => new ModulePermissionEntity
-            { 
+            {
                 ModuleId = module.Id,
                 CanView = true,
                 CanCreate = true,

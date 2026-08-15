@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260814112039_InitializeDatabase")]
+    [Migration("20260815073649_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -194,10 +194,6 @@ namespace Data.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("AddressLine2")
-                        .HasMaxLength(256)
-                        .HasColumnType("varchar(256)");
-
                     b.Property<string>("City")
                         .IsRequired()
                         .HasMaxLength(128)
@@ -226,6 +222,7 @@ namespace Data.Database.Migrations
                         .HasColumnType("varchar(32)");
 
                     b.Property<string>("StateOrProvince")
+                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("varchar(128)");
 
@@ -312,6 +309,15 @@ namespace Data.Database.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("IsMarkedAdDeletedAt")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("IsMarkedAdDeletedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsMarkedAsDeleted")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -347,13 +353,8 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime>("DateOfBirth")
+                    b.Property<DateTime?>("DateOfBirth")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("varchar(320)");
 
                     b.Property<string>("FirstName")
                         .HasMaxLength(128)
@@ -371,11 +372,6 @@ namespace Data.Database.Migrations
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("varchar(128)");
 
                     b.HasKey("Id");
 
@@ -532,7 +528,8 @@ namespace Data.Database.Migrations
 
             modelBuilder.Entity("Data.Database.Entities.User.UserProfileEntity", b =>
                 {
-                    b.Navigation("Address");
+                    b.Navigation("Address")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

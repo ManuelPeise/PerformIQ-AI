@@ -1,4 +1,5 @@
-﻿using Web.Api.Services.ApiControllers.Authentication;
+﻿using Web.Api.Services.ApiControllers;
+using Web.Api.Services.ApiControllers.Authentication;
 
 namespace Web.Api.Bundels
 {
@@ -29,7 +30,7 @@ namespace Web.Api.Bundels
 
             app.MapControllers();
 
-            AuthenticationEndpointMapper.MapAuthEndpoints(app);
+            EndpointMapper.MapEndpoints(app);
 
             app.MapGet("/", () => "PerformIQ API is running");
         }

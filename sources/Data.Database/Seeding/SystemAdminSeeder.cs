@@ -62,6 +62,21 @@ public static class SystemAdminSeeder
             UserName = normalizedUserName,
             Email = normalizedEmail,
             IsActive = options.IsActive,
+            Profile = new UserProfileEntity
+            {
+                FirstName = string.Empty,
+                LastName = string.Empty,
+                DateOfBirth = null,
+                Address = new UserAddressEntity
+                {
+                    Street = string.Empty,
+                    HouseNumber = string.Empty,
+                    PostalCode = string.Empty,
+                    City = string.Empty,
+                    StateOrProvince = string.Empty,
+                    CountryCode = string.Empty
+                }
+            },
             Credentials = new UserCredentialsEntity
             {
                 PasswordHash = passwordHash,

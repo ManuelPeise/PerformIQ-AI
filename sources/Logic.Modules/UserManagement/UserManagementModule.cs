@@ -1,299 +1,215 @@
 using Data.Accessor;
 using Data.Accessor.Interfaces;
 using Data.Database.Entities;
-using Data.Database.Entities.Authentication;
 using Data.Database.Entities.User;
 using Logic.Modules.Interfaces;
-using Shared.Models.Profile;
+using Logic.Shared;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Shared.Models.Authentication;
 using Shared.Models.UserManagement;
+using System.Linq.Expressions;
 
 namespace Logic.Modules.UserManagement;
 
-public class UserManagementModule(
-    IApplicationUnitOfWork applicationUnitOfWork) : IUserManagementModule
+public class UserManagementModule : LogicBase, IUserManagementModule
 {
-    private const int MaxPageSize = 100;
+    private readonly ILogger<UserManagementModule> _logger;
 
-    private readonly IApplicationUnitOfWork _applicationUnitOfWork = applicationUnitOfWork;
-
-    // refactor: Consider using a more efficient approach for filtering and pagination, such as applying filters and pagination directly in the database query instead of in-memory filtering.
-    public async Task<UserListResultModel> ListUsersAsync(UserListQueryModel queryModel, CancellationToken cancellationToken = default)
+    public UserManagementModule(
+        ILogger<UserManagementModule> logger,
+        IHttpContextAccessor httpContextAccessor,
+        IApplicationUnitOfWork applicationUnitOfWork) : base(applicationUnitOfWork, httpContextAccessor)
     {
-        ArgumentNullException.ThrowIfNull(queryModel);
-
-        if (queryModel.PageNumber <= 0)
-        {
-            throw new ArgumentException("Page number must be greater than 0.");
-        }
-
-        if (queryModel.PageSize <= 0 || queryModel.PageSize > MaxPageSize)
-        {
-            throw new ArgumentException($"Page size must be between 1 and {MaxPageSize}.");
-        }
-
-        var normalizedSearchTerm = queryModel.SearchTerm?.Trim();
-
-        var userCandidates = await _applicationUnitOfWork.Users.GetAsync(
-            new DbQueryOptions<UserEntity> { AsNoTracking = true },
-            cancellationToken);
-
-        var filteredUsers = userCandidates.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(normalizedSearchTerm))
-        {
-            var loweredSearchTerm = normalizedSearchTerm.ToLowerInvariant();
-            filteredUsers = filteredUsers.Where(x =>
-                x.UserName.ToLower().Contains(loweredSearchTerm)
-                || x.Email.ToLower().Contains(loweredSearchTerm));
-        }
-
-        if (queryModel.IsActive.HasValue)
-        {
-            filteredUsers = filteredUsers.Where(x => x.IsActive == queryModel.IsActive.Value);
-        }
-
-        var orderedUsers = filteredUsers.OrderBy(x => x.UserName).ToList();
-        var totalCount = orderedUsers.Count;
-        var skip = (queryModel.PageNumber - 1) * queryModel.PageSize;
-        var pagedUsers = orderedUsers.Skip(skip).Take(queryModel.PageSize).ToList();
-
-        var rolesByUserId = await GetRolesByUserIdAsync(pagedUsers.Select(x => x.Id), cancellationToken);
-
-        return new UserListResultModel
-        {
-            PageNumber = queryModel.PageNumber,
-            PageSize = queryModel.PageSize,
-            TotalCount = totalCount,
-            Users = pagedUsers.Select(user => MapToSummaryModel(user, rolesByUserId)).ToList()
-        };
+        _logger = logger;
     }
 
-    public async Task<UserDetailsModel> GetUserByIdAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<UserDataExportModel>> ListUsersAsync(CancellationToken cancellationToken = default)
     {
-        if (userId <= 0)
+        try
         {
-            throw new ArgumentException("Valid user id is required.");
-        }
-
-        var user = await GetUserForDetailsAsync(userId, cancellationToken);
-        return MapToDetailsModel(user);
-    }
-
-    public async Task<UserDetailsModel> SetUserActiveStateAsync(
-        int userId,
-        SetUserActiveStateRequestModel requestModel,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(requestModel);
-
-        if (userId <= 0)
-        {
-            throw new ArgumentException("Valid user id is required.");
-        }
-
-        var user = await _applicationUnitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException("User was not found.");
-
-        if (user.IsActive != requestModel.IsActive)
-        {
-            user.IsActive = requestModel.IsActive;
-            await _applicationUnitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
-        var updatedUser = await GetUserForDetailsAsync(userId, cancellationToken);
-        return MapToDetailsModel(updatedUser);
-    }
-
-    public async Task<UserDetailsModel> SetUserRolesAsync(
-        int userId,
-        SetUserRolesRequestModel requestModel,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(requestModel);
-
-        if (userId <= 0)
-        {
-            throw new ArgumentException("Valid user id is required.");
-        }
-
-        var normalizedRoleNames = requestModel.RoleNames
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (normalizedRoleNames.Count == 0)
-        {
-            throw new ArgumentException("At least one role must be provided.");
-        }
-
-        var roles = await _applicationUnitOfWork.Roles.GetAsync(
-            new DbQueryOptions<RoleEntity>
-            {
-                WhereExpression = x => normalizedRoleNames.Contains(x.Name)
-            },
-            cancellationToken);
-
-        if (roles.Count != normalizedRoleNames.Count)
-        {
-            var missingRoles = normalizedRoleNames
-                .Except(roles.Select(x => x.Name), StringComparer.OrdinalIgnoreCase);
-
-            throw new InvalidOperationException($"The following roles were not found: {string.Join(", ", missingRoles)}.");
-        }
-
-        var user = await _applicationUnitOfWork.Users.GetByIdAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException("User was not found.");
-
-        var existingUserRoles = await _applicationUnitOfWork.UserRoles.GetAsync(
-            new DbQueryOptions<UserRoleEntity> { WhereExpression = x => x.UserId == userId },
-            cancellationToken);
-
-        var targetRoleIds = roles.Select(x => x.Id).ToHashSet();
-        var currentRoleIds = existingUserRoles.Select(x => x.RoleId).ToHashSet();
-
-        var rolesToRemove = existingUserRoles.Where(x => !targetRoleIds.Contains(x.RoleId)).ToList();
-        foreach (var userRole in rolesToRemove)
-        {
-            await _applicationUnitOfWork.UserRoles.DeleteAsync(userRole, cancellationToken);
-        }
-
-        var roleIdsToAdd = targetRoleIds.Except(currentRoleIds);
-        foreach (var roleId in roleIdsToAdd)
-        {
-            await _applicationUnitOfWork.UserRoles.AddAsync(new UserRoleEntity
-            {
-                UserId = user.Id,
-                RoleId = roleId
-            }, cancellationToken);
-        }
-
-        if (rolesToRemove.Count > 0 || roleIdsToAdd.Any())
-        {
-            await _applicationUnitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
-        var updatedUser = await GetUserForDetailsAsync(userId, cancellationToken);
-        return MapToDetailsModel(updatedUser);
-    }
-
-    private async Task<UserEntity> GetUserForDetailsAsync(int userId, CancellationToken cancellationToken)
-    {
-        var users = await _applicationUnitOfWork.Users.GetAsync(
-            new DbQueryOptions<UserEntity>
-            {
-                AsNoTracking = true,
-                Includes = { x => x.Profile! },
-                WhereExpression = x => x.Id == userId
-            },
-            cancellationToken);
-
-        var user = users.FirstOrDefault() ?? throw new InvalidOperationException("User was not found.");
-
-        if (user.Profile is not null)
-        {
-            var profiles = await _applicationUnitOfWork.UserProfiles.GetAsync(
-                new DbQueryOptions<UserProfileEntity>
+            var userEntities = await ApplicationUnitOfWork.Users.GetAsync(
+                new DbQueryOptions<UserEntity>
                 {
                     AsNoTracking = true,
-                    Includes = { x => x.Address! },
-                    WhereExpression = x => x.Id == user.Profile.Id
+                    Includes = {
+                    x => x.UserRoles,
+                    x => x.Profile,
+                    x => x.ModulePermissions },
+                    OrderByExpression = x => x.UserName,
                 },
                 cancellationToken);
 
-            var profileWithAddress = profiles.FirstOrDefault();
-            if (profileWithAddress is not null)
+            return MapToExportModels(userEntities);
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while listing users.");
+
+            return new List<UserDataExportModel>();
+        }
+    }
+
+    public async Task<bool> UpdateUserAsync(UserDataExportModel user)
+    {
+        try
+        {
+            ValidateUserModel(user);
+
+            var userEntity = await ApplicationUnitOfWork.Users.GetByIdAsync(
+                user.UserId,
+                asNoTracking: false,
+                includeExpressions: new List<Expression<Func<UserEntity, object>>> { x => x.Profile, x => x.UserRoles, x => x.ModulePermissions });
+
+            if (userEntity == null)
             {
-                user.Profile = profileWithAddress;
+                throw new InvalidOperationException($"User with ID {user.UserId} not found.");
+            }
+
+            if (user.IsMarkedAsDeleted)
+            {
+                userEntity.IsActive = false;
+                userEntity.IsMarkedAsDeleted = true;
+                userEntity.IsMarkedAdDeletedBy = GetCurrentUserName();
+                userEntity.IsMarkedAdDeletedAt = DateTime.UtcNow.ToString("o");
+            }
+            else
+            {
+                userEntity.IsActive = user.IsActive;
+                userEntity.IsMarkedAsDeleted = false;
+                userEntity.IsMarkedAdDeletedBy = null;
+                userEntity.IsMarkedAdDeletedAt = null;
+
+                await MapUserRoles(userEntity, user.Roles);
+
+                await MapUserModulePermissions(userEntity, user.Permissions);
+            }
+
+            await ApplicationUnitOfWork.SaveChangesAsync();
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while updating user with ID {UserId}.", user.UserId);
+
+            return false;
+        }
+    }
+
+    public async Task DeleteUsersAsync()
+    {
+        try
+        {
+            var userEntitiesToDelete = await ApplicationUnitOfWork.Users.GetAsync(new DbQueryOptions<UserEntity>
+            {
+                AsNoTracking = false,
+                WhereExpression = x => x.IsMarkedAsDeleted
+            });
+
+            if (userEntitiesToDelete.Any())
+            {
+                await ApplicationUnitOfWork.Users.DeleteRange(userEntitiesToDelete);
+                await ApplicationUnitOfWork.SaveChangesAsync();
+
+                _logger.LogInformation("Deleted {Count} users with ids [{UserIds}].", userEntitiesToDelete.Count(), string.Join(", ", userEntitiesToDelete.Select(u => u.Id)));
+            }
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred while deleting users.");
+        }
+    }
+
+    private void ValidateUserModel(UserDataExportModel user)
+    {
+        if (user == null)
+        {
+            throw new ArgumentNullException(nameof(user));
+        }
+    }
+
+    private IEnumerable<UserDataExportModel> MapToExportModels(IEnumerable<UserEntity> users)
+    {
+        return (from user in users
+
+                select new UserDataExportModel
+                {
+                    UserId = user.Id,
+                    FirstName = user.Profile?.FirstName,
+                    LastName = user.Profile?.LastName,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    DateOfBirthUtc = user.Profile is null ? null : user.Profile.DateOfBirth?.ToString("o"),
+                    IsActive = user.IsActive,
+                    Roles = user.UserRoles
+                        .Select(x => x.Role.Name)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Distinct()
+                        .OrderBy(x => x)
+                        .ToList(),
+                    Permissions = user.ModulePermissions
+                        .Select(x => new Permission
+                        {
+                            Module = x.Module.Name,
+                            CanView = x.CanView,
+                            CanEdit = x.CanEdit,
+                            CanCreate = x.CanCreate,
+                            CanDelete = x.CanDelete,
+                        })
+                        .ToList()
+                });
+
+    }
+
+    private async Task MapUserRoles(UserEntity userEntity, List<string> roles)
+    {
+        var userRoles = await ApplicationUnitOfWork.Roles.GetAsync();
+
+        var userRolesToDelete = userEntity.UserRoles
+            .Where(x => !roles.Contains(x.Role.Name, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        if (userRolesToDelete.Any())
+        {
+            await ApplicationUnitOfWork.UserRoles.DeleteRange(userRolesToDelete);
+        }
+
+        var userRolesToAdd = userRoles
+            .Where(x => roles.Contains(x.Name, StringComparer.OrdinalIgnoreCase) && !userEntity.UserRoles.Any(y => y.RoleId == x.Id))
+            .ToList();
+
+        if (userRolesToAdd.Any())
+        {
+            foreach (var role in userRolesToAdd)
+            {
+                var userRoleEntity = new UserRoleEntity
+                {
+                    UserId = userEntity.Id,
+                    RoleId = role.Id
+                };
+
+                await ApplicationUnitOfWork.UserRoles.AddAsync(userRoleEntity);
             }
         }
 
-        var rolesByUserId = await GetRolesByUserIdAsync(new[] { user.Id }, cancellationToken);
-        user.UserRoles = rolesByUserId.TryGetValue(user.Id, out var roleEntities)
-            ? roleEntities
-            : new List<UserRoleEntity>();
-
-        return user;
     }
 
-    private static UserSummaryModel MapToSummaryModel(
-        UserEntity user,
-        IReadOnlyDictionary<int, List<UserRoleEntity>> rolesByUserId)
+    private async Task MapUserModulePermissions(UserEntity userEntity, List<Permission> permissions)
     {
-        var userRoles = rolesByUserId.TryGetValue(user.Id, out var roles)
-            ? roles
-            : Enumerable.Empty<UserRoleEntity>();
-
-        return new UserSummaryModel
+        foreach (var permissionEntity in userEntity.ModulePermissions)
         {
-            UserId = user.Id,
-            UserName = user.UserName,
-            Email = user.Email,
-            IsActive = user.IsActive,
-            Roles = userRoles
-                .Select(x => x.Role.Name)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList()
-        };
-    }
+            var currentPermission = permissions.FirstOrDefault(p => p.Module.Equals(permissionEntity.Module.Name, StringComparison.OrdinalIgnoreCase));
 
-    private static UserDetailsModel MapToDetailsModel(UserEntity user)
-    {
-        var profile = user.Profile;
-        var address = profile?.Address;
-
-        return new UserDetailsModel
-        {
-            UserId = user.Id,
-            UserName = user.UserName,
-            Email = user.Email,
-            IsActive = user.IsActive,
-            FirstName = profile?.FirstName,
-            LastName = profile?.LastName,
-            DateOfBirthUtc = profile is null ? null : profile.DateOfBirth,
-            Address = address is null
-                ? null
-                : new UserAddressModel
-                {
-                    Street = address.Street,
-                    HouseNumber = address.HouseNumber,
-                    AddressLine2 = address.AddressLine2,
-                    PostalCode = address.PostalCode,
-                    City = address.City,
-                    StateOrProvince = address.StateOrProvince,
-                    CountryCode = address.CountryCode
-                },
-            Roles = user.UserRoles
-                .Select(x => x.Role.Name)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .OrderBy(x => x)
-                .ToList()
-        };
-    }
-
-    private async Task<Dictionary<int, List<UserRoleEntity>>> GetRolesByUserIdAsync(
-        IEnumerable<int> userIds,
-        CancellationToken cancellationToken)
-    {
-        var idList = userIds.Distinct().ToList();
-        if (idList.Count == 0)
-        {
-            return new Dictionary<int, List<UserRoleEntity>>();
-        }
-
-        var userRoles = await _applicationUnitOfWork.UserRoles.GetAsync(
-            new DbQueryOptions<UserRoleEntity>
+            if (currentPermission == null)
             {
-                AsNoTracking = true,
-                Includes = { x => x.Role },
-                WhereExpression = x => idList.Contains(x.UserId)
-            },
-            cancellationToken);
+                continue;
+            }
 
-        return userRoles
-            .GroupBy(x => x.UserId)
-            .ToDictionary(group => group.Key, group => group.ToList());
+            permissionEntity.CanView = currentPermission.CanView;
+            permissionEntity.CanCreate = currentPermission.CanCreate;
+            permissionEntity.CanEdit = currentPermission.CanEdit;
+            permissionEntity.CanDelete = currentPermission.CanDelete;
+        }
     }
 }

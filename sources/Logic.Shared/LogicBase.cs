@@ -11,6 +11,7 @@ namespace Logic.Shared
 
         private readonly IApplicationUnitOfWork _applicationUnitOfWork;
         private readonly HttpContext _httpContext;
+        
         public LogicBase(IApplicationUnitOfWork applicationUnitOfWork, IHttpContextAccessor httpContextAccessor)
         {
             _applicationUnitOfWork = applicationUnitOfWork;
@@ -29,6 +30,20 @@ namespace Logic.Shared
             }
 
             return null;
+        }
+
+        public string GetCurrentUserName()
+        {
+            if (_httpContext.User.Identity?.IsAuthenticated == true)
+            {
+                var userNameClaim = _httpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name);
+                if (userNameClaim != null)
+                {
+                    return userNameClaim.Value;
+                }
+            }
+
+            return "System";
         }
     }
 }

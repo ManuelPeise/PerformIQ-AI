@@ -46,8 +46,6 @@ namespace Data.Database
 
             modelBuilder.Entity<UserProfileEntity>(builder =>
             {
-                builder.Property(x => x.UserName).HasMaxLength(128).IsRequired();
-                builder.Property(x => x.Email).HasMaxLength(320).IsRequired();
                 builder.Property(x => x.FirstName).HasMaxLength(128);
                 builder.Property(x => x.LastName).HasMaxLength(128);
                 builder.HasIndex(x => x.UserId).IsUnique();
@@ -62,7 +60,6 @@ namespace Data.Database
             {
                 builder.Property(x => x.Street).HasMaxLength(256).IsRequired();
                 builder.Property(x => x.HouseNumber).HasMaxLength(32).IsRequired();
-                builder.Property(x => x.AddressLine2).HasMaxLength(256);
                 builder.Property(x => x.PostalCode).HasMaxLength(32).IsRequired();
                 builder.Property(x => x.City).HasMaxLength(128).IsRequired();
                 builder.Property(x => x.StateOrProvince).HasMaxLength(128);

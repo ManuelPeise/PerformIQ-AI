@@ -51,13 +51,12 @@ public class ProfileServiceModule(
         var user = await GetUserWithProfileAsync(userId, cancellationToken);
 
         var profile = user.Profile;
+        
         if (profile is null)
         {
             profile = new UserProfileEntity
             {
                 UserId = user.Id,
-                UserName = user.UserName,
-                Email = user.Email
             };
 
             await _applicationUnitOfWork.UserProfiles.AddAsync(profile, cancellationToken);
@@ -65,8 +64,7 @@ public class ProfileServiceModule(
         }
         else
         {
-            profile.UserName = user.UserName;
-            profile.Email = user.Email;
+           
         }
 
         profile.FirstName = NormalizeOptionalText(requestModel.FirstName);
@@ -84,10 +82,10 @@ public class ProfileServiceModule(
 
             address.Street = addressRequest.Street!.Trim();
             address.HouseNumber = addressRequest.HouseNumber!.Trim();
-            address.AddressLine2 = NormalizeOptionalText(addressRequest.AddressLine2);
+           
             address.PostalCode = addressRequest.PostalCode!.Trim();
             address.City = addressRequest.City!.Trim();
-            address.StateOrProvince = NormalizeOptionalText(addressRequest.StateOrProvince);
+            address.StateOrProvince = NormalizeOptionalText(addressRequest.StateOrProvince)!;
             address.CountryCode = addressRequest.CountryCode!.Trim().ToUpperInvariant();
 
             profile.Address = address;
@@ -105,8 +103,6 @@ public class ProfileServiceModule(
         return new UserProfileModel
         {
             UserId = user.Id,
-            UserName = profile?.UserName ?? user.UserName,
-            Email = profile?.Email ?? user.Email,
             FirstName = profile?.FirstName,
             LastName = profile?.LastName,
             DateOfBirthUtc = profile is null ? null : profile.DateOfBirth,
@@ -116,7 +112,6 @@ public class ProfileServiceModule(
                 {
                     Street = addressEntity.Street,
                     HouseNumber = addressEntity.HouseNumber,
-                    AddressLine2 = addressEntity.AddressLine2,
                     PostalCode = addressEntity.PostalCode,
                     City = addressEntity.City,
                     StateOrProvince = addressEntity.StateOrProvince,
