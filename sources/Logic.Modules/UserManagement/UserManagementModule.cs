@@ -16,6 +16,7 @@ public class UserManagementModule(
 
     private readonly IApplicationUnitOfWork _applicationUnitOfWork = applicationUnitOfWork;
 
+    // refactor: Consider using a more efficient approach for filtering and pagination, such as applying filters and pagination directly in the database query instead of in-memory filtering.
     public async Task<UserListResultModel> ListUsersAsync(UserListQueryModel queryModel, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(queryModel);

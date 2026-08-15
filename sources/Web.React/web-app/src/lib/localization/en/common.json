@@ -12,5 +12,11 @@
   "labelRegister": "Register",
   "labelEmail": "Email",
   "labelDontHaveAccount": "You don't have an account?",
-  "labelCreateAccount": "Create your account"
+  "labelCreateAccount": "Create your account",
+  "titleUserAdministration": "User Administration",
+  "subTitleUserAdministration": "Manage users and permissions",
+  "titleHealthConnect": "Health Connect",
+  "subTitleHealthConnectSubtitle": "Monitor the health of your system",
+  "titleDashboard": "Dashboard",
+  "subTitleDashboard": "View your performance metrics"
 }

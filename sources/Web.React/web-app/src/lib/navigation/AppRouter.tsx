@@ -1,4 +1,5 @@
 import React from "react";
+import UserAdministrationContainer from "../../pages/private/userAdministration/UserAdministration";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "../../pages/public/LandingPage";
 import RegistrationPage from "../../pages/public/RegistrationPage";
@@ -8,8 +9,8 @@ import AuthorizedLayout from "../../components/layouts/AuthorizedLayout";
 import PageNotFound from "../../pages/PageNotFound";
 import type { ILocalizationProps } from "../localization/withLocalization";
 import { getResource } from "../localization/i18n";
-import Dashboard from "../../pages/private/Dashboard/Dashboard";
-import SettingsPage from "../../pages/private/settings/SettingsPage";
+import Dashboard from "../../pages/private/dashboard/Dashboard";
+import HealthConnectContainer from "../../pages/private/healthConnect/HealthConnectContainer";
 
 const AppRouter: React.FC = () => {
   const localeProps: ILocalizationProps = {
@@ -36,8 +37,12 @@ const AppRouter: React.FC = () => {
             element={<Dashboard {...localeProps} />}
           />
           <Route
-            path="/performiq-ai/settings"
-            element={<SettingsPage {...localeProps} />}
+            path="/performiq-ai/user-administration"
+            element={<UserAdministrationContainer {...localeProps} />}
+          />
+          <Route
+            path="/performiq-ai/health-connect"
+            element={<HealthConnectContainer {...localeProps} />}
           />
         </Route>
         <Route path="*" element={<PageNotFound />} />

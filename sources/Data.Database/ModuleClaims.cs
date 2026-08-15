@@ -3,7 +3,6 @@
     // granted for all users
     public static class DefaultModuleClaims
     {
-
         public const string Dashboard = "dashboard";
         public const string Profile = "profile";
         

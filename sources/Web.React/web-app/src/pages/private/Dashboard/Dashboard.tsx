@@ -9,7 +9,7 @@ const Dashboard: React.FC<IProps> = () => {
   const { currentUser, onLogoutUser } = useAuthenticationContext();
 
   return (
-    <DefaultPageContainer onLogout={onLogoutUser}>
+    <DefaultPageContainer onLogout={onLogoutUser} pageTitle="Dashboard">
       <div>
         <h1>Welcome, {currentUser?.email}!</h1>
         <p>This is your dashboard.</p>

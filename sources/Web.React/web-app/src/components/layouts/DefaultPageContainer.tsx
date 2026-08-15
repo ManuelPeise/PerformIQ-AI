@@ -3,12 +3,13 @@ import StyledBox from "../styledComponents/boxes";
 import AppHeader from "./components/AppHeader";
 
 interface IDefaultPageContainerProps {
+  pageTitle: string;
   onLogout: () => void;
   children: React.ReactNode;
 }
 
 const DefaultPageContainer: React.FC<IDefaultPageContainerProps> = (props) => {
-  const { onLogout, children } = props;
+  const { pageTitle, onLogout, children } = props;
 
   return (
     <StyledBox
@@ -29,7 +30,7 @@ const DefaultPageContainer: React.FC<IDefaultPageContainerProps> = (props) => {
           flex: 1,
         }}
       >
-        <AppHeader onLogout={onLogout} pageTitle="Page Title" />
+        <AppHeader onLogout={onLogout} pageTitle={pageTitle} />
       </StyledBox>
       <StyledBox sx={{ padding: 2 }}>{children}</StyledBox>
     </StyledBox>
