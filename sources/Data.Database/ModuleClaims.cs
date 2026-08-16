@@ -10,7 +10,7 @@
 
     public static class ProtectedModuleClaims
     {
-        public const string UserAdministration = "user_administration";
-        public const string HealthConnect = "health_connect";
+        public const string UserAdministration = "userAdministration";
+        public const string HealthConnect = "healthConnect";
     }
 }

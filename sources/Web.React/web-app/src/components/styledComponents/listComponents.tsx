@@ -1,12 +1,16 @@
-import { List, ListItem, ListItemText } from "@mui/material";
+import {
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+} from "@mui/material";
 import { styled } from "@mui/material/styles";
 
 const StyledList = styled(List)(({ theme }) => ({
   width: "100%",
   padding: theme.spacing(2),
   margin: 0,
-  backgroundColor: "transparent",
-  border: `none`,
 }));
 
 const StyledListItem = styled(ListItem, {
@@ -24,7 +28,6 @@ const StyledListItem = styled(ListItem, {
 }));
 
 const StyledListItemText = styled(ListItemText)(({ theme }) => ({
-  width: "100%",
   padding: 0,
   margin: 0,
   backgroundColor: "transparent",
@@ -41,4 +44,23 @@ const StyledListItemText = styled(ListItemText)(({ theme }) => ({
   },
 }));
 
-export { StyledListItem, StyledList, StyledListItemText };
+const StyledListItemIcon = styled(ListItemIcon)(({ theme }) => ({
+  color: theme.palette.text.primary,
+  width: 40,
+  height: 40,
+}));
+
+const StyledListItemButton = styled(ListItemButton)(() => ({
+  margin: 0,
+  padding: 0,
+  backgroundColor: "transparent",
+  border: "none",
+}));
+
+export {
+  StyledListItem,
+  StyledList,
+  StyledListItemText,
+  StyledListItemIcon,
+  StyledListItemButton,
+};

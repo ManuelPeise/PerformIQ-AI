@@ -32,6 +32,10 @@ namespace Data.Database.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("GroupResourceKey")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<bool>("IsDefaultModule")
                         .HasColumnType("tinyint(1)");
 

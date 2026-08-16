@@ -7,7 +7,7 @@ namespace Web.Api.Services.ApiControllers.UserService
     {
         internal static void MapUserServiceEndpoints(this IEndpointRouteBuilder endpointRouteBuilder)
         {
-            var group = endpointRouteBuilder.MapGroup("/api/userservice").WithTags("User Service");
+            var group = endpointRouteBuilder.MapGroup("/api/administration/userservice").WithTags("User Service");
 
             group.MapGet("/getusers", GetExportUserDataAsync).RequireAuthorization("user-management");
             group.MapPost("/updateuser", UpdateUserDataAsync).RequireAuthorization("user-management");

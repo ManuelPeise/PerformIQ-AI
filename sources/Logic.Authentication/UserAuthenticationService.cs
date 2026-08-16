@@ -90,20 +90,20 @@ public class UserAuthenticationService(
 
             user.UserRoles.Add(new UserRoleEntity { Role = role });
 
-            var grantedModulesEntities = await ApplicationUnitOfWork.Modules.GetAsync(
+            var modulesEntities = await ApplicationUnitOfWork.Modules.GetAsync(
                 new DbQueryOptions<ModuleEntity>
                 {
-                    WhereExpression = x => x.IsDefaultModule,
+                    AsNoTracking = true,
                 },
                 cancellationToken);
 
-            var userModulePermissions = grantedModulesEntities.Select(module => new ModulePermissionEntity
+            var userModulePermissions = modulesEntities.Select(module => new ModulePermissionEntity
             {
                 ModuleId = module.Id,
-                CanView = true,
-                CanCreate = true,
-                CanEdit = true,
-                CanDelete = false,
+                CanView = module.IsDefaultModule,
+                CanCreate = module.IsDefaultModule,
+                CanEdit = module.IsDefaultModule,
+                CanDelete = module.IsDefaultModule,
             }).ToList();
 
             user.ModulePermissions.AddRange(userModulePermissions);

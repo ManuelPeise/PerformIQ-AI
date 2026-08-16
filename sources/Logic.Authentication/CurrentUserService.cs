@@ -67,6 +67,7 @@ namespace Logic.Authentication
                         Permissions = permissions.Select(p => new Permission
                         {
                             Module = p.Module.Name,
+                            GroupResourceKey = p.Module.GroupResourceKey,
                             CanView = p.CanView,
                             CanCreate = p.CanCreate,
                             CanEdit = p.CanEdit,

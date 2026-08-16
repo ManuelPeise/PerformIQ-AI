@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Data.Database.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20260815073649_InitializeDatabase")]
+    [Migration("20260815154343_InitializeDatabase")]
     partial class InitializeDatabase
     {
         /// <inheritdoc />
@@ -32,6 +32,10 @@ namespace Data.Database.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("GroupResourceKey")
                         .IsRequired()
                         .HasColumnType("longtext");
 

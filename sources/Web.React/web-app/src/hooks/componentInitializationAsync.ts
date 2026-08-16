@@ -3,25 +3,19 @@ import React from "react";
 export type ComponentInitializationState<TModel> = {
   isInitialized: boolean;
   isLoading: boolean;
-  props: TModel | null;
+  props: TModel;
   error: unknown | null;
 };
 
 const useComponentInitialization = <TModel>(
   callback: () => Promise<TModel>,
 ): ComponentInitializationState<TModel> => {
-  const callbackRef = React.useRef(callback);
-
-  React.useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
-
   const [state, setState] = React.useState<
     ComponentInitializationState<TModel>
   >({
     isInitialized: false,
     isLoading: true,
-    props: null,
+    props: {} as TModel,
     error: null,
   });
 
@@ -30,7 +24,7 @@ const useComponentInitialization = <TModel>(
 
     const initialize = async () => {
       try {
-        const model = await callbackRef.current();
+        const model = await callback();
 
         if (cancelled) {
           return;
@@ -50,7 +44,7 @@ const useComponentInitialization = <TModel>(
         setState({
           isInitialized: false,
           isLoading: false,
-          props: null,
+          props: {} as TModel,
           error,
         });
       }
@@ -61,7 +55,7 @@ const useComponentInitialization = <TModel>(
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [callback]);
 
   return state;
 };

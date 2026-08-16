@@ -1,6 +1,7 @@
 using Data.Accessor;
 using Data.Accessor.Interfaces;
 using Data.Database.Entities;
+using Data.Database.Entities.Authentication;
 using Data.Database.Entities.User;
 using Logic.Modules.Interfaces;
 using Logic.Shared;
@@ -15,7 +16,7 @@ namespace Logic.Modules.UserManagement;
 public class UserManagementModule : LogicBase, IUserManagementModule
 {
     private readonly ILogger<UserManagementModule> _logger;
-
+    private const int ThirtyDaysAgoInDays = -30;
     public UserManagementModule(
         ILogger<UserManagementModule> logger,
         IHttpContextAccessor httpContextAccessor,
@@ -31,15 +32,17 @@ public class UserManagementModule : LogicBase, IUserManagementModule
             var userEntities = await ApplicationUnitOfWork.Users.GetAsync(
                 new DbQueryOptions<UserEntity>
                 {
-                    AsNoTracking = true,
+                    AsNoTracking = false,
                     Includes = {
-                    x => x.UserRoles,
-                    x => x.Profile,
-                    x => x.ModulePermissions },
+                    x => x.Profile
+                    },
                     OrderByExpression = x => x.UserName,
                 },
                 cancellationToken);
 
+            await EnsureModulesLoaded(userEntities, cancellationToken);
+            await EnsureRolesLoaded(userEntities, cancellationToken);
+           
             return MapToExportModels(userEntities);
         }
         catch (Exception exception)
@@ -101,10 +104,12 @@ public class UserManagementModule : LogicBase, IUserManagementModule
     {
         try
         {
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(ThirtyDaysAgoInDays);
+
             var userEntitiesToDelete = await ApplicationUnitOfWork.Users.GetAsync(new DbQueryOptions<UserEntity>
             {
                 AsNoTracking = false,
-                WhereExpression = x => x.IsMarkedAsDeleted
+                WhereExpression = x => x.IsMarkedAsDeleted && x.IsMarkedAdDeletedAt != null && DateTime.Parse(x.IsMarkedAdDeletedAt) >= thirtyDaysAgo,
             });
 
             if (userEntitiesToDelete.Any())
@@ -129,10 +134,35 @@ public class UserManagementModule : LogicBase, IUserManagementModule
         }
     }
 
+    private async Task EnsureRolesLoaded(IReadOnlyList<UserEntity> userEntities, CancellationToken cancellationToken)
+    {
+        foreach (var userEntity in userEntities)
+        {
+            await ApplicationUnitOfWork.UserRoles.GetAsync(
+                new DbQueryOptions<UserRoleEntity>
+                {
+                    WhereExpression = x => x.UserId == userEntity.Id,
+                    Includes = { x => x.Role }
+                }, cancellationToken: cancellationToken);
+        }
+    }
+
+    private async Task EnsureModulesLoaded(IReadOnlyList<UserEntity> userEntities, CancellationToken cancellationToken)
+    {
+        foreach (var userEntity in userEntities)
+        {
+            await ApplicationUnitOfWork.ModulePermissions.GetAsync(
+                new DbQueryOptions<ModulePermissionEntity>
+                {
+                    WhereExpression = x => x.UserId == userEntity.Id,
+                    Includes = { x => x.Module }
+                }, cancellationToken: cancellationToken);
+        }
+    }
+
     private IEnumerable<UserDataExportModel> MapToExportModels(IEnumerable<UserEntity> users)
     {
         return (from user in users
-
                 select new UserDataExportModel
                 {
                     UserId = user.Id,
@@ -152,6 +182,7 @@ public class UserManagementModule : LogicBase, IUserManagementModule
                         .Select(x => new Permission
                         {
                             Module = x.Module.Name,
+                            GroupResourceKey = x.Module.GroupResourceKey,
                             CanView = x.CanView,
                             CanEdit = x.CanEdit,
                             CanCreate = x.CanCreate,
@@ -199,6 +230,8 @@ public class UserManagementModule : LogicBase, IUserManagementModule
     {
         foreach (var permissionEntity in userEntity.ModulePermissions)
         {
+            await ApplicationUnitOfWork.Modules.GetByIdAsync(permissionEntity.ModuleId);
+
             var currentPermission = permissions.FirstOrDefault(p => p.Module.Equals(permissionEntity.Module.Name, StringComparison.OrdinalIgnoreCase));
 
             if (currentPermission == null)

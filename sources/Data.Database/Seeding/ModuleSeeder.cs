@@ -9,19 +9,19 @@ namespace Data.Database.Seeding
         {
             ArgumentNullException.ThrowIfNull(databaseContext);
 
-            var moduleNames = new[]
+            var moduleDictionary = new Dictionary<string, string>
             {
-                DefaultModuleClaims.Dashboard,
-                DefaultModuleClaims.Profile,
+                { DefaultModuleClaims.Dashboard, "common.captionGeneral" },
+                { DefaultModuleClaims.Profile, "common.captionUser" },
             };
 
             var existingModuleNames = await databaseContext.Modules
-                .Where(module => moduleNames.Contains(module.Name))
+                .Where(module => moduleDictionary.Keys.Contains(module.Name))
                 .Select(module => module.Name)
                 .ToListAsync(cancellationToken);
 
             var existingModuleLookup = new HashSet<string>(existingModuleNames, StringComparer.OrdinalIgnoreCase);
-            var missingModuleNames = moduleNames.Where(moduleName => !existingModuleLookup.Contains(moduleName)).ToArray();
+            var missingModuleNames = moduleDictionary.Keys.Where(moduleName => !existingModuleLookup.Contains(moduleName)).ToArray();
 
             if (missingModuleNames.Length == 0)
             {
@@ -30,7 +30,7 @@ namespace Data.Database.Seeding
 
             foreach (var moduleName in missingModuleNames)
             {
-                await databaseContext.Modules.AddAsync(new ModuleEntity { Name = moduleName, IsDefaultModule = true }, cancellationToken);
+                await databaseContext.Modules.AddAsync(new ModuleEntity { Name = moduleName, GroupResourceKey = moduleDictionary[moduleName], IsDefaultModule = true }, cancellationToken);
             }
 
             await databaseContext.SaveChangesAsync(cancellationToken);
@@ -40,19 +40,19 @@ namespace Data.Database.Seeding
         {
             ArgumentNullException.ThrowIfNull(databaseContext);
 
-            var moduleNames = new[]
+            var moduleDictionary = new Dictionary<string, string>
             {
-                ProtectedModuleClaims.UserAdministration,
-                ProtectedModuleClaims.HealthConnect,
+                { ProtectedModuleClaims.UserAdministration, "common.captionAdministration" },
+                { ProtectedModuleClaims.HealthConnect, "common.captionInterfaces" },
             };
 
             var existingModuleNames = await databaseContext.Modules
-                .Where(module => moduleNames.Contains(module.Name))
+                .Where(module => moduleDictionary.Keys.Contains(module.Name))
                 .Select(module => module.Name)
                 .ToListAsync(cancellationToken);
 
             var existingModuleLookup = new HashSet<string>(existingModuleNames, StringComparer.OrdinalIgnoreCase);
-            var missingModuleNames = moduleNames.Where(moduleName => !existingModuleLookup.Contains(moduleName)).ToArray();
+            var missingModuleNames = moduleDictionary.Keys.Where(moduleName => !existingModuleLookup.Contains(moduleName)).ToArray();
 
             if (missingModuleNames.Length == 0)
             {
@@ -61,7 +61,7 @@ namespace Data.Database.Seeding
 
             foreach (var moduleName in missingModuleNames)
             {
-                await databaseContext.Modules.AddAsync(new ModuleEntity { Name = moduleName, IsDefaultModule = false }, cancellationToken);
+                await databaseContext.Modules.AddAsync(new ModuleEntity { Name = moduleName, GroupResourceKey = moduleDictionary[moduleName], IsDefaultModule = false }, cancellationToken);
             }
 
             await databaseContext.SaveChangesAsync(cancellationToken);

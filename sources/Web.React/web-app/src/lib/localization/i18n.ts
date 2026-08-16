@@ -27,15 +27,6 @@ i18n.use(initReactI18next).init({
 export const getResource = (key: string): string => {
   const [namespace, ...translationKeys] = key.split(".");
 
-  console.log(
-    "getResource called with key:",
-    key,
-    "ns:",
-    namespace,
-    "ts:",
-    translationKeys,
-  );
-
   return i18n.t(translationKeys.join("."), {
     ns: namespace,
   });

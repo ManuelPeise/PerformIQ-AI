@@ -4,7 +4,6 @@ import { SpacingEnum } from "../../lib/enums/spacingEnum";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   margin: theme.spacing(SpacingEnum.sm),
-  width: "100%",
 
   "& .MuiOutlinedInput-root": {
     borderRadius: 8,

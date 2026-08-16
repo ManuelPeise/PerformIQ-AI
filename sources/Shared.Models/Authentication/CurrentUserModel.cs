@@ -12,6 +12,7 @@
     public class  Permission
     {
         public string Module { get; set; } = null!;
+        public string GroupResourceKey { get; set; } = null!;
         public bool CanView { get; set; }
         public bool CanCreate { get; set; }
         public bool CanEdit { get; set; }

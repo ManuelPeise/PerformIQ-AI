@@ -1,5 +1,5 @@
 import React from "react";
-import UserAdministrationContainer from "../../pages/private/userAdministration/UserAdministration";
+import UserAdministrationContainer from "../../pages/private/userAdministration/UserAdministrationContainer";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "../../pages/public/LandingPage";
 import RegistrationPage from "../../pages/public/RegistrationPage";

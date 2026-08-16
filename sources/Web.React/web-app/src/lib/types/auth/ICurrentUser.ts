@@ -1,5 +1,5 @@
 export interface ICurrentUser {
-  userId: string;
+  userId: number;
   userName: string;
   email: string;
   roles: string[];
@@ -8,6 +8,7 @@ export interface ICurrentUser {
 
 export interface IPermission {
   module: string;
+  groupResourceKey: string;
   canView: boolean;
   canCreate: boolean;
   canEdit: boolean;
